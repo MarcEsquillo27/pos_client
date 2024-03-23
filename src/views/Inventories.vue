@@ -1,0 +1,461 @@
+<template>
+  <div>
+    <v-container fluid>
+      <h1>Inventories</h1>
+      <v-row>
+        <v-col cols="12" sm="6">
+          <v-text-field outlined rounded color="primary" dense label="Search" />
+        </v-col>
+        <v-col cols="12" sm="6" class="text-right">
+          <v-btn @click="openDialog()" rounded color="primary" dense>Add Item</v-btn>
+          <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
+        </v-col>
+      </v-row>
+      <v-row justify="center">
+        <v-col cols="12" md="4">
+          <v-card elevation-24 @click="resetFilters()">
+            <v-card-title class="no-padding"
+              ><h2>
+                Total Products <v-icon style="color: white">mdi-archive</v-icon>
+              </h2></v-card-title
+            >
+            <v-card-title class="justify-center"
+              ><h1>{{ allProductStocks() }}</h1></v-card-title
+            >
+          </v-card></v-col
+        >
+        <v-col cols="12" md="4">
+          <v-card elevation-24 @click="toggleLowStockFilter()">
+            <v-card-title class="no-padding"
+              ><h2>
+                Low Stock Products<v-icon style="color: white"
+                  >mdi-archive-arrow-down</v-icon
+                >
+              </h2></v-card-title
+            >
+            <v-card-title class="justify-center"
+              ><h1>{{ lowStockProducts() }}</h1></v-card-title
+            >
+          </v-card></v-col
+        >
+        <v-col cols="12" md="4">
+          <v-card elevation-24 @click="toggleNoStockFilter()">
+            <v-card-title class="no-padding"
+              ><h2>
+                Out of Stock Products<v-icon style="color: white"
+                  >mdi-archive-cancel</v-icon
+                >
+              </h2></v-card-title
+            >
+            <v-card-title class="justify-center"
+              ><h1>{{ outOfStockProducts() }}</h1></v-card-title
+            >
+          </v-card></v-col
+        >
+      </v-row>
+
+      <v-row>
+        <v-col cols="12">
+          <v-simple-table class="border">
+            <thead>
+              <tr style="background-color: #1976d2">
+                <th style="color: white" v-for="(items, index) in headers" :key="index">
+                  {{ items.text }}
+                </th>
+                <th style="color: white" colspan="2">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                :style="
+                  items.stock == 0
+                    ? 'background-color:#FFBB64;'
+                    : items.stock <= 5
+                    ? 'background-color:#CE4257;color:white;'
+                    : ''
+                "
+                v-for="(items, index) in paginatedItems"
+                :key="index"
+              >
+                <td>{{ items.productNumber }}</td>
+                <td>{{ items.item }}</td>
+                <td>{{ items.unit }}</td>
+                <td>{{ items.brand }}</td>
+                <td>{{ items.category }}</td>
+                <td>{{ items.description }}</td>
+                <td>
+                  <span :class="items.stock == 0 ? 'blink' : ''">{{
+                    items.stock == 0 ? "OUT OF STOCK" : items.stock
+                  }}</span>
+                </td>
+                <td>{{ items.discount }}%</td>
+                <td>&#8369; {{ items.originalPrice }}</td>
+                <td>&#8369; {{ items.salesPrice }}</td>
+                <td>&#8369; {{ totalPrice(items) }}</td>
+
+                <td>
+                  <v-icon color="primary" @click="editInventory(items)"
+                    >mdi-pencil</v-icon
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </v-simple-table>
+        </v-col>
+      </v-row>
+      <v-row><v-col>
+        <v-pagination v-model="currentPage" :length="numPages" @input="changePage" />
+      </v-col></v-row>
+      <v-dialog v-model="add_dialog" width="40%">
+        <v-card>
+          <v-card-title> Add Item </v-card-title>
+          <v-card-text>
+            <v-btn class="mb-2" dense x-small color="primary" @click="barcodeGenerate()"
+              >Generate Barcode</v-btn
+            >
+            <v-text-field
+              v-model="insertItem.productNumber"
+              label="Product Number"
+              outlined
+              dense
+              @change="checkSameBarcode(insertItem.productNumber)"
+            ></v-text-field>
+            <v-text-field
+              v-model="insertItem.item"
+              label="Item"
+              outlined
+              dense
+            ></v-text-field>
+            <v-text-field
+              v-model="insertItem.unit"
+              label="Unit"
+              outlined
+              dense
+            ></v-text-field>
+            <v-text-field
+              v-model="insertItem.brand"
+              label="Brand"
+              outlined
+              dense
+            ></v-text-field>
+            <v-text-field
+              v-model="insertItem.category"
+              label="Category"
+              outlined
+              dense
+            ></v-text-field>
+            <v-text-field
+              v-model="insertItem.description"
+              label="Description"
+              outlined
+              dense
+            ></v-text-field>
+            <v-text-field
+              v-model="insertItem.stock"
+              type="number"
+              label="Stock"
+              outlined
+              dense
+            ></v-text-field>
+            <v-text-field
+              v-model="insertItem.originalPrice"
+              type="number"
+              label="Orginal Price"
+              outlined
+              dense
+            ></v-text-field>
+            <v-text-field
+              v-model="insertItem.salesPrice"
+              type="number"
+              label="Sales Price"
+              outlined
+              dense
+            ></v-text-field>
+            <v-text-field
+              v-model="insertItem.discount"
+              type="number"
+              label="Discount Price"
+              outlined
+              dense
+            ></v-text-field>
+            <v-row>
+              <v-col
+                ><h3 style="color: black">
+                  Capital per Item: <span>&#8369;</span> {{ capitalPerItem(insertItem) }}
+                </h3></v-col
+              >
+              <v-col
+                ><h3 style="color: black">
+                  Sales Total: <span>&#8369;</span> {{ overallCapital(insertItem) }}
+                </h3></v-col
+              >
+            </v-row>
+            <v-btn
+              class="mt-1"
+              :style="!addButton ? 'display:none;' : ''"
+              @click="insertInventory(insertItem)"
+              color="success"
+              block
+            >
+              SAVE
+            </v-btn>
+            <v-btn
+              class="mt-1"
+              :style="!editButton ? 'display:none;' : ''"
+              @click="updateInventory(insertItem)"
+              color="success"
+              block
+            >
+              UPDATE
+            </v-btn>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
+    </v-container>
+    <v-footer class="footer" dense>
+      <v-row>
+        <v-col>
+          Legends: <v-icon style="color: white">mdi-square</v-icon> - Active Stock
+          <v-icon style="color: #ce4257">mdi-square</v-icon> - Low Stock
+          <v-icon style="color: #ffbb64">mdi-square</v-icon> - Out of Stock
+        </v-col>
+      </v-row>
+    </v-footer>
+  </div>
+</template>
+
+<script>
+import axios from "axios";
+import moment from "moment";
+import _ from "lodash";
+import Swal from "sweetalert2";
+export default {
+  data: () => {
+    return {
+      currentPage: 1, // Current page number
+      itemsPerPage: 5, // Number of items per page
+      addButton: false,
+      editButton: false,
+      add_dialog: false,
+      showDatePicker: false,
+      from_date: null,
+      all_products: [],
+      low_products: false,
+      filter_all: false,
+      no_products: false,
+      insertItem: {
+        productNumber: "",
+      },
+      menu: false,
+      date: "",
+      headers: [
+        { text: "Product Number", value: "productNumber" },
+        { text: "Item", value: "item" },
+        { text: "Unit", value: "unit" },
+        { text: "Brand ", value: "brand" },
+        { text: "Category ", value: "category" },
+        { text: "Description ", value: "description" },
+        { text: "Stock", value: "stock" },
+        { text: "Discount", value: "discount" },
+        { text: "Orignal Price", value: "originalPrice" },
+        { text: "Sales Price", value: "salesPrice" },
+        { text: "Total", value: "total" },
+      ],
+    };
+  },
+  computed: {
+    paginatedItems() {
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      return this.InventoriesProduct.slice(startIndex, endIndex);
+    },
+    numPages() {
+      return Math.ceil(this.InventoriesProduct.length / this.itemsPerPage);
+    },
+    InventoriesProduct() {
+      let filteredProducts = this.all_products;
+      // Apply filter if necessary
+      if (this.low_products) {
+        filteredProducts = _.filter(filteredProducts, (item) => item.stock <= 5);
+      } else if (this.no_products) {
+        filteredProducts = _.filter(filteredProducts, (item) => item.stock === 0);
+      }
+      return filteredProducts;
+    },
+  },
+  methods: {
+    changePage(page) {
+      this.currentPage = page;
+    },
+    checkSameBarcode(val) {
+      axios.get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`).then((res) => {
+        if (res.data.length) {
+          Swal.fire({
+            title: "Product Code Exist!",
+            text: "Change product code to avoid multiple code",
+            icon: "error",
+          });
+          this.insertItem.productNumber = "";
+          return false;
+        }
+      });
+    },
+    toggleLowStockFilter() {
+      this.low_products = !this.low_products;
+      this.no_products = false; // Reset no stock filter
+      this.filter_all = false; // Reset total products filter
+    },
+    // Add method to toggle no stock filter
+    toggleNoStockFilter() {
+      this.no_products = !this.no_products;
+      this.low_products = false; // Reset low stock filter
+      this.filter_all = false; // Reset total products filter
+    },
+    // Add method to reset all filters
+    resetFilters() {
+      this.filter_all = true;
+      this.low_products = false;
+      this.no_products = false;
+    },
+    allProductStocks() {
+      return this.all_products.length;
+    },
+    lowStockProducts() {
+      let get_low_products = this.all_products.filter((rec) => {
+        if (rec.stock <= 5 && rec.stock != 0) {
+          return rec;
+        }
+      });
+      return get_low_products.length;
+    },
+    outOfStockProducts() {
+      let get_out_of_stocks_products = this.all_products.filter((rec) => {
+        if (rec.stock == 0) {
+          return rec;
+        }
+      });
+      return get_out_of_stocks_products.length;
+    },
+    totalPrice(val) {
+      return val.stock * val.salesPrice;
+    },
+    overallCapital(val) {
+      var totalallCapital = null;
+      totalallCapital = val.stock * val.salesPrice;
+      //  totalCapital = val.salesPrice - val.originalPrice
+      return !totalallCapital ? 0 : totalallCapital;
+    },
+    capitalPerItem(val) {
+      var totalCapital = null;
+      totalCapital = val.salesPrice - val.originalPrice;
+      //  totalCapital = val.salesPrice - val.originalPrice
+      return !totalCapital ? 0 : totalCapital;
+    },
+    editInventory(val) {
+      this.addButton = false;
+      this.insertItem = {};
+      this.add_dialog = true;
+      this.insertItem = val;
+      this.editButton = true;
+    },
+    openDialog() {
+      this.add_dialog = true;
+      this.addButton = true;
+      this.editButton = false;
+      this.insertItem = {};
+    },
+    getAllProducts() {
+      axios.get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory").then((res) => {
+        this.all_products = res.data;
+      });
+    },
+    updateInventory(val) {
+      val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
+      axios
+        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventory", val)
+        .then(() => {
+          // this.all_products.push(this.insertItem);
+          alert("ITEM UPDATED");
+          this.add_dialog = false;
+          let audit_logs = {
+            action: `Update Item`,
+            description: `Update Item: ${val.productNumber} stock: ${val.stock}`,
+            product_number: val.productNumber,
+            quantity: val.stock,
+            drawer_link: `Inventories`,
+            date: moment().format("YYYY-MM-DD hh:mm:ss"),
+          };
+          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
+        })
+        .catch((err) => {
+          alert(err);
+        });
+    },
+    barcodeGenerate() {
+      let twelveDigitNumber = "";
+      for (let i = 0; i < 12; i++) {
+        twelveDigitNumber += Math.floor(Math.random() * 10); // Generate a random digit and concatenate
+      }
+      this.insertItem.productNumber = twelveDigitNumber;
+      this.$forceUpdate(); // Force Vue to update the view
+    },
+    insertInventory() {
+      this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
+      let add_data = this.insertItem;
+      axios
+        .post("https://pos-server-ktwz.vercel.app/inventory/api/addInventory", add_data)
+        .then(() => {
+          this.all_products.push(this.insertItem);
+          alert("NEW ITEM ADDED");
+          this.add_dialog = false;
+
+          let audit_logs = {
+            action: `Added New Item`,
+            description: `NEW Item: ${this.insertItem.productNumber} stock: ${this.insertItem.stock}`,
+            product_number: this.insertItem.productNumber,
+            quantity: this.insertItem.stock,
+            drawer_link: `Inventories`,
+            date: moment().format("YYYY-MM-DD hh:mm:ss"),
+          };
+          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
+        })
+        .catch((err) => {
+          alert(err);
+        });
+    },
+  },
+  mounted() {
+    this.getAllProducts();
+  },
+};
+</script>
+
+<style scoped>
+/* Apply custom styles to remove padding */
+.no-padding {
+  background-color: #1976d2;
+  color: white;
+}
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #f5f5f5;
+  padding: 1;
+}
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.blink {
+  animation: blink 1s infinite;
+}
+</style>
