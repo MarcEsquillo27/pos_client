@@ -310,7 +310,7 @@ export default {
     updateInventory(val) {
       console.log(val);
       axios
-        .post("https://pos-server-ktwz.vercel.app/account/api/updateAccount", val)
+        .post("http://localhost:12799/account/api/updateAccount", val)
         .then(() => {
           // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
