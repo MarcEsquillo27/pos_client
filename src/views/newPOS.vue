@@ -1121,7 +1121,7 @@ export default {
       this.getAllCategories();  
     }, 1000);
     this.authorization = secret_key(this.$store.state.storedEmp.token);
-    // console.log(this.authorization);
+    console.log(this.apiUrl);
   },
 };
 </script>
