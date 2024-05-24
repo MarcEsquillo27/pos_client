@@ -181,8 +181,8 @@ export default {
       this.toUpdate.stock = this.toUpdate.stock + stock_toAdd
       this.toUpdate.quantity = this.quantity
       this.toUpdate.total = this.toUpdate.salesPrice * this.quantity
-      axios.post("http://localhost:12799/sales/api/updateSales",  this.toUpdate);
-      axios.post("http://localhost:12799/sales/api/updateInventoryStock", this.toUpdate);
+      axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateSales",  this.toUpdate);
+      axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStock", this.toUpdate);
       Swal.fire({
   title: "Item Changed",
   icon: "success",
@@ -194,11 +194,11 @@ export default {
       this.toUpdate.quantity = this.quantity
       this.toUpdate.total = this.toUpdate.salesPrice * this.quantity
       this.toUpdate.stock = this.toUpdate.stock - this.quantity
-     await axios.post("http://localhost:12799/sales/api/updateSales",  this.toUpdate);
-     await axios.post("http://localhost:12799/sales/api/updateInventoryStock", this.toUpdate);
+     await axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateSales",  this.toUpdate);
+     await axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStock", this.toUpdate);
 // console.log(this.toOldItem)
       this.toOldItem[0].stock = this.toOldItem[0].stock + this.toOldItem[0].quantity
-     await axios.post("http://localhost:12799/sales/api/updateInventoryStockReturn", this.toOldItem[0]);
+     await axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStockReturn", this.toOldItem[0]);
       Swal.fire({
   title: "Item Changed",
   icon: "success",
@@ -211,7 +211,7 @@ export default {
     },
     getItemDetails(val){
       this.toExchange = false
-      axios.get(`http://localhost:12799/inventory/api/getPerItem/${val}`).then((res)=>{
+      axios.get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`).then((res)=>{
         for (let i = 0; i < res.data.length; i++) {
           const element = res.data[i];
           this.toUpdate.stock = element.stock
@@ -231,7 +231,7 @@ export default {
       this.total = this.toUpdate.salesPrice * this.toUpdate.quantity
     },
     getAllItems() {
-      axios.get("http://localhost:12799/inventory/api/getInventory").then((res) => {
+      axios.get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory").then((res) => {
         this.list_of_products = res.data.filter((rec)=>{
           if(rec.stock > 0){
             return rec
@@ -244,7 +244,7 @@ export default {
       this.exchange_dialog = true;
     },
     getAllProducts() {
-      axios.get("http://localhost:12799/sales/api/getAllSales").then((res) => {
+      axios.get("https://pos-server-ktwz.vercel.app/sales/api/getAllSales").then((res) => {
         console.log(res.data);
         this.all_products = res.data;
       });
@@ -267,8 +267,8 @@ export default {
         (product) => product.salesID === item.salesID
       );
       this.all_products[index].total_sum = updatedTotal;
-      axios.post("http://localhost:12799/sales/api/updateSales", item);
-      axios.post("http://localhost:12799/sales/api/updateInventoryStock", item);
+      axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateSales", item);
+      axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStock", item);
       // .then((res)=>{
 
       // })
@@ -277,7 +277,7 @@ export default {
       console.log(val)
       this.toUpdate.salesID = val.salesID
       axios
-        .get(`http://localhost:12799/sales/api/getbySalesId/${val.salesID}`)
+        .get(`https://pos-server-ktwz.vercel.app/sales/api/getbySalesId/${val.salesID}`)
         .then((res) => {
           this.saled_items = [];
           this.return_dialog = true;

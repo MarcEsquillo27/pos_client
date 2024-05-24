@@ -129,7 +129,7 @@ export default {
     //ALL GET DATA
     getProducts(val) {
       if(val){
-    axios.get(`http://localhost:12799/inventory/api/getPerItem/${val}`)
+    axios.get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`)
     .then((res) => {
       console.log(res.data)
         let result_product = res.data[0];
@@ -170,10 +170,10 @@ export default {
       },
       purchase(){
         console.log(this.products)
-        axios.post('http://localhost:12799/inventory/api/updateInventoryStock',this.products)
+        axios.post('https://pos-server-ktwz.vercel.app/inventory/api/updateInventoryStock',this.products)
         .then((res)=>{
         console.log(res.data)
-        axios.post('http://localhost:12799/sales/api/addSales',this.products).then((res)=>{
+        axios.post('https://pos-server-ktwz.vercel.app/sales/api/addSales',this.products).then((res)=>{
           console.log(res.data)
         }).then(()=>{
               for (let i = 0; i < this.products.length; i++) {
@@ -186,7 +186,7 @@ export default {
                 drawer_link:`POS`,
                 date:moment().format("YYYY-MM-DD hh:mm:ss"),
               }
-                     axios.post('http://localhost:12799/audit/api/addLogs',audit_logs).then((res)=>{
+                     axios.post('https://pos-server-ktwz.vercel.app/audit/api/addLogs',audit_logs).then((res)=>{
           console.log(res.data)
         })
               }
@@ -222,7 +222,7 @@ const printContents = document.getElementById('my-card').innerHTML;
         }
       },
       getAllProducts(){
-          axios.get("http://localhost:12799/inventory/api/getInventory").then((res)=>{
+          axios.get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory").then((res)=>{
       this.list_of_products = res.data
     }).catch((err)=>{
       alert(err.message )

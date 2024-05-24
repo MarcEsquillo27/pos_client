@@ -102,7 +102,7 @@ export default {
         item:val.item
       }
  axios
-        .post("http://localhost:12799/inventory/api/updateInventory", toUpdate)
+        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventory", toUpdate)
         .then(() => {
           // this.all_products.push(this.insertItem);
           Swal.fire({
@@ -119,7 +119,7 @@ export default {
             drawer_link: `Discount`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs).then(()=>{
+          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs).then(()=>{
             location.reload()
           });
         })

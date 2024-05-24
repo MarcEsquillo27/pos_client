@@ -1,8 +1,10 @@
 <template>
   <v-app>
-    <!-- :style="this.$store.state.storedEmp.userdetails.length ? '' : 'display:none'" -->
+    <!-- 
 
+     -->
     <v-navigation-drawer
+    :style="this.$store.state.storedEmp.token ? '' : 'display:none'" 
       
       v-model="navDrawer"
       app
@@ -24,9 +26,12 @@
         </div>
       </template>
     </v-navigation-drawer>
-    <!--  :style="this.$store.state.storedEmp.userdetails.length ? '' : 'display:none'" -->
+    <!-- 
+
+     -->
     <v-app-bar
-     
+      :style="this.$store.state.storedEmp.token ? '' : 'display:none'"
+
       app
       color="primary"
       dark

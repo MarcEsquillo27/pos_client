@@ -635,7 +635,7 @@ export default {
     getProducts(val) {
       if (val) {
         axios
-          .get(`http://localhost:12799/inventory/api/getPerItem/${val}`)
+          .get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`)
           .then((res) => {
             console.log(res.data);
             let result_product = res.data[0];
@@ -686,11 +686,11 @@ export default {
     purchase() {
       console.log(this.products);
       axios
-        .post("http://localhost:12799/inventory/api/updateInventoryStock", this.products)
+        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventoryStock", this.products)
         .then((res) => {
           console.log(res.data);
           axios
-            .post("http://localhost:12799/sales/api/addSales", this.products)
+            .post("https://pos-server-ktwz.vercel.app/sales/api/addSales", this.products)
             .then(() => {
               this.salesInvoice = moment().format("YYYYMMDDhhmmss");
             })
@@ -706,7 +706,7 @@ export default {
                   date: moment().format("YYYY-MM-DD hh:mm:ss"),
                 };
                 axios
-                  .post("http://localhost:12799/audit/api/addLogs", audit_logs)
+                  .post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs)
                   .then((res) => {
                     console.log(res.data);
                   });
@@ -753,7 +753,7 @@ export default {
     },
     getAllProducts() {
       axios
-        .get("http://localhost:12799/inventory/api/getInventory")
+        .get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory")
         .then((res) => {
           this.list_of_products = res.data.filter((rec) => {
             if (rec.stock > 0) {

@@ -213,7 +213,7 @@ export default {
       this.getAllProducts()
     },
     extractionData() {
-  axios.get(`http://localhost:12799/sales/api/getSalesExtraction/${this.first_date}/${this.second_date}`)
+  axios.get(`https://pos-server-ktwz.vercel.app/sales/api/getSalesExtraction/${this.first_date}/${this.second_date}`)
     .then((response) => {
       const sales_extracted = response.data;
       return this.firstProcess(sales_extracted);
@@ -275,7 +275,7 @@ firstProcess(sales_extracted) {
 },
 
     getAllProducts() {
-      axios.get(`http://localhost:12799/sales/api/getSales/${this.first_date}/${this.second_date}`).then((res) => {
+      axios.get(`https://pos-server-ktwz.vercel.app/sales/api/getSales/${this.first_date}/${this.second_date}`).then((res) => {
         console.log(res.data);
         this.all_products = res.data
       });
@@ -294,14 +294,14 @@ firstProcess(sales_extracted) {
      let updatedTotal =  this.saled_items.reduce((acc, product) => acc + product.total, 0);
       let index = this.all_products.findIndex(product => product.salesID === item.salesID)
       this.all_products[index].total_sum = updatedTotal
-      axios.post('http://localhost:12799/sales/api/updateSales',item)
-      axios.post('http://localhost:12799/sales/api/updateInventoryStock',item)
+      axios.post('https://pos-server-ktwz.vercel.app/sales/api/updateSales',item)
+      axios.post('https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStock',item)
         // .then((res)=>{
 
         // })
     },
     returnItems(val) {
-      axios.get(`http://localhost:12799/sales/api/getbySalesId/${val.salesID}`).then((res) => {
+      axios.get(`https://pos-server-ktwz.vercel.app/sales/api/getbySalesId/${val.salesID}`).then((res) => {
         this.saled_items = [];
       this.return_dialog = true;
       let arr_product = res.data;

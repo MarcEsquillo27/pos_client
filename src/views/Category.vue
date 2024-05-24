@@ -172,7 +172,7 @@ export default {
       this.currentPage = page;
     },
     checkSameBarcode(val) {
-      axios.get(`http://localhost:12799/inventory/api/getPerItem/${val}`).then((res) => {
+      axios.get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`).then((res) => {
         if (res.data.length) {
           Swal.fire({
             title: "Product Code Exist!",
@@ -249,14 +249,14 @@ export default {
       this.insertItem = {};
     },
     getAllProducts() {
-      axios.get("http://localhost:12799/category/api/getCategory").then((res) => {
+      axios.get("https://pos-server-ktwz.vercel.app/category/api/getCategory").then((res) => {
         this.all_products = res.data;
       });
     },
     updateInventory(val) {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       axios
-        .post("http://localhost:12799/category/api/updateCategory", val)
+        .post("https://pos-server-ktwz.vercel.app/category/api/updateCategory", val)
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
@@ -269,7 +269,7 @@ export default {
             drawer_link: `Category`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs);
+          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
         })
         .catch((err) => {
           alert(err);
@@ -287,7 +287,7 @@ export default {
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       axios
-        .post("http://localhost:12799/category/api/addCategory", add_data)
+        .post("https://pos-server-ktwz.vercel.app/category/api/addCategory", add_data)
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("NEW ITEM ADDED");
@@ -301,7 +301,7 @@ export default {
             drawer_link: `Category`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs);
+          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
         })
         .catch((err) => {
           alert(err);

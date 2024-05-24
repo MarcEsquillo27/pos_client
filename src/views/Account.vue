@@ -266,7 +266,7 @@ export default {
             icon: "success",
           });
 
-          axios.post("http://localhost:12799/account/api/deleteAccount", val);
+          axios.post("https://pos-server-ktwz.vercel.app/account/api/deleteAccount", val);
           window.location.reload();
         }
       });
@@ -298,7 +298,7 @@ export default {
       // console.log(this.insertItem.password);
     },
     getAllProducts() {
-      axios.get("http://localhost:12799/account/api/getAccount").then((res) => {
+      axios.get("https://pos-server-ktwz.vercel.app/account/api/getAccount").then((res) => {
         this.all_products = res.data.filter((rec) => {
           rec.access = JSON.parse(rec.access);
           rec.drawer_access = JSON.parse(rec.drawer_access);
@@ -310,7 +310,7 @@ export default {
     updateInventory(val) {
       console.log(val);
       axios
-        .post("http://localhost:12799/account/api/updateAccount", val)
+        .post("https://pos-server-ktwz.vercel.app/account/api/updateAccount", val)
         .then(() => {
           // this.all_products.push(this.insertItem);
           // alert("ITEM UPDATED");
@@ -323,7 +323,7 @@ export default {
           //   drawer_link: `Inventories`,
           //   date: moment().format("YYYY-MM-DD hh:mm:ss"),
           // };
-          // axios.post("http://localhost:12799/audit/api/addLogs", audit_logs);
+          // axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
           window.location.reload();
         })
         .catch((err) => {
@@ -342,7 +342,7 @@ export default {
       let add_data = this.insertItem;
       console.log(add_data);
       axios
-        .post("http://localhost:12799/account/api/addAccount", add_data)
+        .post("https://pos-server-ktwz.vercel.app/account/api/addAccount", add_data)
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("NEW ITEM ADDED");
@@ -356,7 +356,7 @@ export default {
             drawer_link: `Accounts`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs).then(() => {
+          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs).then(() => {
             Swal.fire("Saved!", "", "success");
             window.location.reload();
           });

@@ -87,7 +87,7 @@ export default {
     },
   },
   mounted(){
-    console.log(this.apiUrl)
+    console.log(this.apiUrl,"90")
   }
 };
 </script>

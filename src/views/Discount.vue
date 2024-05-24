@@ -154,7 +154,7 @@ export default {
       this.insertItem = {};
     },
     getAllProductsDiscounted() {
-      axios.get("http://localhost:12799/discount/api/getDiscountItem").then((res) => {
+      axios.get("https://pos-server-ktwz.vercel.app/discount/api/getDiscountItem").then((res) => {
         console.log(res.data)
         // this.list_of_products = [];
         this.list_of_discount_items = res.data.filter((rec)=>{
@@ -166,7 +166,7 @@ export default {
       });
     },
     getAllProducts() {
-      axios.get("http://localhost:12799/discount/api/getDiscount").then((res) => {
+      axios.get("https://pos-server-ktwz.vercel.app/discount/api/getDiscount").then((res) => {
         this.all_products = res.data;
         this.list_of_products = res.data;
       });
@@ -174,7 +174,7 @@ export default {
     updateInventory(val) {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       axios
-        .post("http://localhost:12799/inventory/api/updateInventory", val)
+        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventory", val)
         .then(() => {
           // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
@@ -187,7 +187,7 @@ export default {
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs);
+          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
         })
         .catch((err) => {
           alert(err);
@@ -196,7 +196,7 @@ export default {
     insertDiscount() {
       let add_data = this.insertItem;
       axios
-        .post("http://localhost:12799/discount/api/addDiscount", add_data)
+        .post("https://pos-server-ktwz.vercel.app/discount/api/addDiscount", add_data)
         .then(() => {
           this.all_products.push(this.insertItem);
           Swal.fire({
@@ -214,7 +214,7 @@ export default {
             drawer_link: `Discount`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs);
+          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
         })
         .catch((err) => {
           alert(err);

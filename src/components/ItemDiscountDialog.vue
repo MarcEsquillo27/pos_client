@@ -128,7 +128,7 @@ export default {
   },
   methods:{
      getAllProducts() {
-      axios.get("http://localhost:12799/inventory/api/getInventory").then((res) => {
+      axios.get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory").then((res) => {
         this.list_of_products = res.data;
         console.log(res.data)
       });
@@ -136,7 +136,7 @@ export default {
     insertInventory(val){
         val.discount_id = this.discount_price
  axios
-        .post("http://localhost:12799/inventory/api/updateInventory", val)
+        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventory", val)
         .then(() => {
           // this.all_products.push(this.insertItem);
           Swal.fire({
@@ -153,7 +153,7 @@ export default {
             drawer_link: `Discount`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs).then(()=>{
+          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs).then(()=>{
             location.reload()
           });
         })
