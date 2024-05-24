@@ -1,426 +1,272 @@
 <template>
-    <div>
-      <v-container fluid>
-        <h1>Discount</h1>
-        <v-row>
-          <v-col cols="12" sm="6">
-            <v-text-field outlined rounded color="primary" dense label="Search" />
-          </v-col>
-          <v-col cols="12" sm="6" class="text-right">
-            <v-btn @click="openDialog()" rounded color="primary" dense>Add Item Discount</v-btn>
-            <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col cols="12">
-            <v-simple-table class="border">
-              <thead>
-                <tr style="background-color: #1976d2">
-                  <th style="color: white" v-for="(items, index) in headers" :key="index">
-                    {{ items.text }}
-                  </th>
-                  <th style="color: white" colspan="2">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  :style="
-                    items.stock == 0
-                      ? 'background-color:#FFBB64;'
-                      : items.stock <= 5
-                      ? 'background-color:#CE4257;color:white;'
-                      : ''
-                  "
-                  v-for="(items, index) in InventoriesProduct"
-                  :key="index"
-                >
-                  <td>{{ items.productNumber }}</td>
-                  <td>{{ items.item }}</td>
-                  <td>{{ items.description }}</td>
-                  <td>
-                    <span :class="items.stock == 0 ? 'blink' : ''">{{
-                      items.stock == 0 ? "OUT OF STOCK" : items.stock
-                    }}</span>
-                  </td>
-                  <td>{{ items.discount }}%</td>
-                  <td>&#8369; {{ items.salesPrice }}</td>
-                  <td>{{ formatDate(items.date) }}</td>
-                  <td>{{ formatDate(items.date) }}</td>
+  <div>
+    <v-container fluid>
+      <h1>Discount</h1>
+      <v-row>
+        <v-col cols="12" sm="6">
+          <v-text-field outlined rounded color="primary" dense label="Search" />
+        </v-col>
+        <v-col cols="12" sm="6" class="text-right">
+          <v-btn @click="openDialog()" rounded color="primary" dense
+            >Add Item Discount</v-btn
+          >
+          <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
+        </v-col>
+      </v-row>
+         <v-row justify="center" >
+        <v-col cols="12" md="4" v-for="(items, index) in all_products" :key="index">
+          <v-card elevation-24 @click="tableDiscount(items.id)">
+           
+            <v-card-title class="justify-center"
+              >{{items.discount_name}} <v-icon style="color: black">mdi-sale</v-icon></v-card-title
+            >
+          </v-card></v-col
+        >
+      </v-row>
+  <!-- DISCOUNT LIST -->
+  <v-dialog v-model="list_dialog" fullscreen round>
+    <v-card>
+      <v-card-title style="background-color: #1976d2; color:white;">
+        Item Discounted
+        <v-spacer></v-spacer>
+        <v-icon style="color:white;" @click="closeDialog()">mdi-close</v-icon>
+      </v-card-title>
+      <v-card-text>
+        <br>
+       <ItemLisDiscountDialog :list_of_discount_items="list_of_discount_items" :value="discount_price"/>
+      </v-card-text>
+     
+    </v-card>
 
-  
-                  <td>
-                    <v-icon color="primary" @click="editInventory(items)"
-                      >mdi-pencil</v-icon
-                    >
-                  </td>
-                </tr>
-              </tbody>
-            </v-simple-table>
-          </v-col>
-        </v-row>
-        <v-dialog v-model="add_dialog" width="40%">
-          <v-card>
-            <v-card-title> Add Discount </v-card-title>
-            <v-card-text>
-                <v-autocomplete
-            outlined
-            clearable
-            color="primary"
-            dense
-            label="Product"
-            :items="list_of_products"
-            :item-text="
-              (elem) => {
-                return elem.productNumber + ' : ' + elem.item;
-              }
-            "
-            item-value="productNumber"
-            v-model="products_code"
-            @change="getProducts(products_code)"
-          />
-              <v-text-field
-                v-model="insertItem.item"
-                label="Item"
-                outlined
-                dense
-              ></v-text-field>
-              <v-text-field
-                v-model="insertItem.brand"
-                label="Brand"
-                outlined
-                dense
-              ></v-text-field>
-              <v-text-field
-                v-model="insertItem.category"
-                label="Category"
-                outlined
-                dense
-              ></v-text-field>
-              <v-text-field
-                v-model="insertItem.description"
-                label="Description"
-                outlined
-                dense
-              ></v-text-field>
-              <v-text-field
-                v-model="insertItem.stock"
-                type="number"
-                label="Stock"
-                outlined
-                dense
-              ></v-text-field>
-              <v-text-field
-                v-model="insertItem.discount"
-                type="number"
-                label="Discount Price"
-                outlined
-                dense
-              ></v-text-field>
-              <v-menu
-        v-model="menu2"
-        :close-on-content-click="false"
-        :nudge-right="40"
-        transition="scale-transition"
-        offset-y
-        min-width="auto"
-      >
-        <template v-slot:activator="{ on, attrs }">
-          <v-text-field
-            v-model="date2"
-            label="Start Date"
-            prepend-icon="mdi-calendar"
-            readonly
-            v-bind="attrs"
-            v-on="on"
-          ></v-text-field>
-        </template>
-        <v-date-picker
-          v-model="date2"
-          @input="menu2 = false"
-        ></v-date-picker>
-      </v-menu>
-      <v-menu
-        v-model="menu2"
-        :close-on-content-click="false"
-        :nudge-right="40"
-        transition="scale-transition"
-        offset-y
-        min-width="auto"
-      >
-        <template v-slot:activator="{ on, attrs }">
-          <v-text-field
-            v-model="date2"
-            label="End Date"
-            prepend-icon="mdi-calendar"
-            readonly
-            v-bind="attrs"
-            v-on="on"
-          ></v-text-field>
-        </template>
-        <v-date-picker
-          v-model="date2"
-          @input="menu2 = false"
-        ></v-date-picker>
-      </v-menu>
-              <v-btn
-                class="mt-1"
-                :style="!addButton ? 'display:none;' : ''"
-                @click="insertInventory(insertItem)"
-                color="success"
-                block
-              >
-                SAVE
-              </v-btn>
-              <v-btn
-                class="mt-1"
-                :style="!editButton ? 'display:none;' : ''"
-                @click="updateInventory(insertItem)"
-                color="success"
-                block
-              >
-                UPDATE
-              </v-btn>
-            </v-card-text>
-          </v-card>
-        </v-dialog>
-      </v-container>
-      <v-footer class="footer" dense>
-        <v-row>
-          <v-col>
-            Legends: <v-icon style="color: white">mdi-square</v-icon> - Active Stock
-            <v-icon style="color: #ce4257">mdi-square</v-icon> - Low Stock
-            <v-icon style="color: #ffbb64">mdi-square</v-icon> - Out of Stock
-          </v-col>
-        </v-row>
-      </v-footer>
-    </div>
-  </template>
-  
-  <script>
-  import axios from "axios";
-  import moment from "moment";
-  import _ from "lodash";
-  import Swal from "sweetalert2";
-  export default {
-    data: () => {
-      return {
-        menu2: false,
-        date2:moment().format("YYYY-MM-DD"),
-        addButton: false,
-        editButton: false,
-        add_dialog: false,
-        showDatePicker: false,
-        from_date: null,
-        all_products: [],
-        list_of_products:[],
-        low_products: false,
-        filter_all: false,
-        no_products: false,
-        insertItem: {
-          productNumber: "",
-        },
-        menu: false,
-        date: "",
-        headers: [
-          { text: "Product Number", value: "productNumber" },
-          { text: "Item", value: "item" },
-          { text: "Description ", value: "description" },
-          { text: "Stock", value: "stock" },
-          { text: "Discount", value: "discount" },
-          { text: "Sales Price", value: "salesPrice" },
-          { text: "Date Start", value: "date" },
-          { text: "Date End", value: "date" },
-        ],
-      };
+  </v-dialog>
+      <!-- ADD NEW DISCOUNT -->
+      <v-dialog v-model="add_dialog" width="40%">
+        <v-card>
+          <v-card-title> Add Discount </v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model="insertItem.discount_name"
+              label="Discount Name"
+              outlined
+              dense
+            />
+            <v-text-field
+              v-model="insertItem.discount_value"
+              type="number"
+              label="Discount Value"
+              outlined
+              dense
+            />
+            <v-btn
+              class="mt-1"
+              :style="!addButton ? 'display:none;' : ''"
+              @click="insertDiscount(insertItem)"
+              color="success"
+              block
+            >
+              SAVE
+            </v-btn>
+            <v-btn
+              class="mt-1"
+              :style="!editButton ? 'display:none;' : ''"
+              @click="updateInventory(insertItem)"
+              color="success"
+              block
+            >
+              UPDATE
+            </v-btn>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
+    </v-container>
+    <v-footer class="footer" dense>
+      <v-row>
+        <v-col>
+          Legends: <v-icon style="color: white">mdi-square</v-icon> - Active Stock
+          <v-icon style="color: #ce4257">mdi-square</v-icon> - Low Stock
+          <v-icon style="color: #ffbb64">mdi-square</v-icon> - Out of Stock
+        </v-col>
+      </v-row>
+    </v-footer>
+  </div>
+</template>
+
+<script>
+import axios from "axios";
+import moment from "moment";
+import Swal from "sweetalert2";
+import ItemLisDiscountDialog from "../components/ItemLisDiscountDialog.vue"
+export default {
+   components: {
+        ItemLisDiscountDialog
     },
-    computed: {
-      InventoriesProduct() {
-        let filteredProducts = this.all_products;
-        // Apply filter if necessary
-        if (this.low_products) {
-          filteredProducts = _.filter(filteredProducts, (item) => item.stock <= 5);
-        } else if (this.no_products) {
-          filteredProducts = _.filter(filteredProducts, (item) => item.stock === 0);
-        }
-        return filteredProducts;
+  data: () => {
+    return {
+      menu2: false,
+      date2: moment().format("YYYY-MM-DD"),
+      addButton: false,
+      add_dialog_item:false,
+      editButton: false,
+      add_dialog: false,
+      list_dialog:false,
+      insert_item:false,
+      showDatePicker: false,
+      from_date: null,
+      discount_price:null,
+      all_products: [],
+      list_of_discount_items:[],
+      list_of_products: [],
+      low_products: false,
+      filter_all: false,
+      no_products: false,
+      insertItem: {
+        productNumber: "",
       },
+      menu: false,
+      date: "",
+      headers: [
+        { text: "Product Number", value: "productNumber" },
+        { text: "Item", value: "item" },
+        { text: "Description ", value: "description" },
+        { text: "Stock", value: "stock" },
+        { text: "Discount", value: "discount" },
+        { text: "Sales Price", value: "salesPrice" },
+        { text: "Date Start", value: "date" },
+        { text: "Date End", value: "date" },
+      ],
+    };
+  },
+  computed: {
+ 
+  },
+  methods: {
+    editInventory(val) {
+      this.addButton = false;
+      this.insertItem = {};
+      this.add_dialog = true;
+      this.insertItem = val;
+      this.editButton = true;
     },
-    methods: {
-      
-        formatDate(val){
-            return moment(val).format("YYYY-MM-DD hh:mm:ss")
-        },
-      checkSameBarcode(val) {
-        axios.get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`).then((res) => {
-          if (res.data.length) {
-            Swal.fire({
-              title: "Product Code Exist!",
-              text: "Change product code to avoid multiple code",
-              icon: "error",
-            });
-            this.insertItem.productNumber = "";
-            return false;
-          }
+    openDialog() {
+      this.add_dialog = true;
+      this.addButton = true;
+      this.editButton = false;
+      this.insertItem = {};
+    },
+    getAllProductsDiscounted() {
+      axios.get("http://localhost:12799/discount/api/getDiscountItem").then((res) => {
+        console.log(res.data)
+        // this.list_of_products = [];
+        this.list_of_discount_items = res.data.filter((rec)=>{
+            if(rec.discount_id == this.discount_price){
+                return rec
+            }
         });
-      },
-      toggleLowStockFilter() {
-        this.low_products = !this.low_products;
-        this.no_products = false; // Reset no stock filter
-        this.filter_all = false; // Reset total products filter
-      },
-      // Add method to toggle no stock filter
-      toggleNoStockFilter() {
-        this.no_products = !this.no_products;
-        this.low_products = false; // Reset low stock filter
-        this.filter_all = false; // Reset total products filter
-      },
-      // Add method to reset all filters
-      resetFilters() {
-        this.filter_all = true;
-        this.low_products = false;
-        this.no_products = false;
-      },
-      allProductStocks() {
-        return this.all_products.length;
-      },
-      lowStockProducts() {
-        let get_low_products = this.all_products.filter((rec) => {
-          if (rec.stock <= 5 && rec.stock != 0) {
-            return rec;
-          }
+        console.log(this.list_of_discount_items)
+      });
+    },
+    getAllProducts() {
+      axios.get("http://localhost:12799/discount/api/getDiscount").then((res) => {
+        this.all_products = res.data;
+        this.list_of_products = res.data;
+      });
+    },
+    updateInventory(val) {
+      val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
+      axios
+        .post("http://localhost:12799/inventory/api/updateInventory", val)
+        .then(() => {
+          // this.all_products.push(this.insertItem);
+          alert("ITEM UPDATED");
+          this.add_dialog = false;
+          let audit_logs = {
+            action: `Update Item`,
+            description: `Update Item: ${val.productNumber} stock: ${val.stock}`,
+            product_number: val.productNumber,
+            quantity: val.stock,
+            drawer_link: `Inventories`,
+            date: moment().format("YYYY-MM-DD hh:mm:ss"),
+          };
+          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs);
+        })
+        .catch((err) => {
+          alert(err);
         });
-        return get_low_products.length;
-      },
-      outOfStockProducts() {
-        let get_out_of_stocks_products = this.all_products.filter((rec) => {
-          if (rec.stock == 0) {
-            return rec;
-          }
-        });
-        return get_out_of_stocks_products.length;
-      },
-      totalPrice(val) {
-        return val.stock * val.salesPrice;
-      },
-      overallCapital(val) {
-        var totalallCapital = null;
-        totalallCapital = val.stock * val.salesPrice;
-        //  totalCapital = val.salesPrice - val.originalPrice
-        return !totalallCapital ? 0 : totalallCapital;
-      },
-      capitalPerItem(val) {
-        var totalCapital = null;
-        totalCapital = val.salesPrice - val.originalPrice;
-        //  totalCapital = val.salesPrice - val.originalPrice
-        return !totalCapital ? 0 : totalCapital;
-      },
-      editInventory(val) {
-        this.addButton = false;
-        this.insertItem = {};
-        this.add_dialog = true;
-        this.insertItem = val;
-        this.editButton = true;
-      },
-      openDialog() {
-        this.add_dialog = true;
-        this.addButton = true;
-        this.editButton = false;
-        this.insertItem = {};
-      },
-      getAllProducts() {
-        axios.get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory").then((res) => {
-          this.all_products = res.data;
-          this.list_of_products = res.data;
-        });
-      },
-      updateInventory(val) {
-        val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
-        axios
-          .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventory", val)
-          .then(() => {
-            // this.all_products.push(this.insertItem);
-            alert("ITEM UPDATED");
-            this.add_dialog = false;
-            let audit_logs = {
-              action: `Update Item`,
-              description: `Update Item: ${val.productNumber} stock: ${val.stock}`,
-              product_number: val.productNumber,
-              quantity: val.stock,
-              drawer_link: `Inventories`,
-              date: moment().format("YYYY-MM-DD hh:mm:ss"),
-            };
-            axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
-          })
-          .catch((err) => {
-            alert(err);
+    },
+    insertDiscount() {
+      let add_data = this.insertItem;
+      axios
+        .post("http://localhost:12799/discount/api/addDiscount", add_data)
+        .then(() => {
+          this.all_products.push(this.insertItem);
+          Swal.fire({
+            title: "New Discount Added",
+            icon: "success",
+            timer: 1500
           });
-      },
-      barcodeGenerate() {
-        let twelveDigitNumber = "";
-        for (let i = 0; i < 12; i++) {
-          twelveDigitNumber += Math.floor(Math.random() * 10); // Generate a random digit and concatenate
-        }
-        this.insertItem.productNumber = twelveDigitNumber;
-        this.$forceUpdate(); // Force Vue to update the view
-      },
-      insertInventory() {
-        this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
-        let add_data = this.insertItem;
-        axios
-          .post("https://pos-server-ktwz.vercel.app/inventory/api/addInventory", add_data)
-          .then(() => {
-            this.all_products.push(this.insertItem);
-            alert("NEW ITEM ADDED");
-            this.add_dialog = false;
-  
-            let audit_logs = {
-              action: `Added New Item`,
-              description: `NEW Item: ${this.insertItem.productNumber} stock: ${this.insertItem.stock}`,
-              product_number: this.insertItem.productNumber,
-              quantity: this.insertItem.stock,
-              drawer_link: `Inventories`,
-              date: moment().format("YYYY-MM-DD hh:mm:ss"),
-            };
-            axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
-          })
-          .catch((err) => {
-            alert(err);
-          });
-      },
+          this.add_dialog = false;
+
+          let audit_logs = {
+            action: `Added New Discount`,
+            description: `NEW Discount: ${this.insertItem.discount_name}`,
+            product_number: this.insertItem.discount_name,
+            quantity: 1,
+            drawer_link: `Discount`,
+            date: moment().format("YYYY-MM-DD hh:mm:ss"),
+          };
+          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs);
+        })
+        .catch((err) => {
+          alert(err);
+        });
     },
-    mounted() {
-      this.getAllProducts();
+    tableDiscount(val){
+      this.list_dialog=true
+      this.insert_item=true
+      this.discount_price=val
+      this.getAllProductsDiscounted()
     },
-  };
-  </script>
-  
-  <style scoped>
-  /* Apply custom styles to remove padding */
-  .no-padding {
-    background-color: #1976d2;
-    color: white;
-  }
-  .footer {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background-color: #f5f5f5;
-    padding: 1;
-  }
-  @keyframes blink {
-    0% {
-      opacity: 1;
+    addDialog(){
+      this.add_dialog_item=true;
+    },
+    closeDialog(){
+      this.list_dialog = false
+      this.list_of_discount_items = []
     }
-    50% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 1;
-    }
+    
+  },
+  mounted() {
+    this.getAllProducts();
+  },
+};
+</script>
+
+<style scoped>
+/* Apply custom styles to remove padding */
+.no-padding {
+  background-color: #1976d2;
+  color: white;
+}
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #f5f5f5;
+  padding: 1;
+}
+@keyframes blink {
+  0% {
+    opacity: 1;
   }
-  
-  .blink {
-    animation: blink 1s infinite;
+  50% {
+    opacity: 0;
   }
-  </style>
-  
+  100% {
+    opacity: 1;
+  }
+}
+
+.blink {
+  animation: blink 1s infinite;
+}
+</style>

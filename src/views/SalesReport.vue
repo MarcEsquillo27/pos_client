@@ -10,7 +10,7 @@
           <!-- FROM DATE -->
           <v-menu
             ref="menu"
-            v-model="menu"
+            v-model="first_date_menu"
             :close-on-content-click="false"
             :return-value.sync="date"
             transition="scale-transition"
@@ -19,7 +19,7 @@
           >
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
-                v-model="date"
+                v-model="first_date"
                 label="From Date"
                 prepend-icon="mdi-calendar"
                 readonly
@@ -30,7 +30,7 @@
                 v-on="on"
               ></v-text-field>
             </template>
-            <v-date-picker v-model="date" no-title scrollable>
+            <v-date-picker v-model="first_date" no-title scrollable>
               <v-spacer></v-spacer>
               <v-btn text color="primary" @click="menu = false"> Cancel </v-btn>
               <v-btn text color="primary" @click="$refs.menu.save(date)"> OK </v-btn>
@@ -41,7 +41,7 @@
           <!-- TO DATE -->
           <v-menu
             ref="menu"
-            v-model="menu"
+            v-model="second_date_menu"
             :close-on-content-click="false"
             :return-value.sync="date"
             transition="scale-transition"
@@ -50,7 +50,7 @@
           >
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
-                v-model="date"
+                v-model="second_date"
                 label="To Date"
                 prepend-icon="mdi-calendar"
                 readonly
@@ -61,59 +61,66 @@
                 v-on="on"
               ></v-text-field>
             </template>
-            <v-date-picker v-model="date" no-title scrollable>
+            <v-date-picker v-model="second_date" no-title scrollable>
               <v-spacer></v-spacer>
               <v-btn text color="primary" @click="menu = false"> Cancel </v-btn>
               <v-btn text color="primary" @click="$refs.menu.save(date)"> OK </v-btn>
             </v-date-picker>
           </v-menu>
         </v-col>
+        <v-col>
+          <v-btn @click="filterDate()" color="primary">
+            Filter Date
+          </v-btn>
+        </v-col>
+        <v-col>
+          <v-btn @click="extractionData()" color="success">
+           <v-icon>mdi-microsoft-excel</v-icon> Extract Data
+          </v-btn>
+        </v-col>
       </v-row>
       <v-row>
         <v-col cols="12">
           <v-card>
             <v-card-text>
-              <v-simple-table class="border" dense>
-                <thead>
-                  <tr>
-                    <th v-for="(items, index) in headers" :key="index">
-                      {{ items.text }}
-                    </th>
-                    <th colspan="2">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(items, index) in all_products" :key="index">
-                    <td>{{ items.salesID }}</td>
-                    <td>{{ items.item_count }}</td>
-                    <td>{{ items.total_sum }}</td>
-                    <!-- <td v-if="!items.editMode">
-                      <v-icon color="primary" @click="toggleEditMode(items)"
-                        >mdi-pencil</v-icon
-                      >
-                    </td>
-                    <td v-else>
-                      <v-icon color="primary" @click="items.editMode = false"
-                        >mdi-close</v-icon
-                      >
-                    </td> -->
-                    <td>
-                      <v-tooltip bottom>
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-icon
-                            color="primary"
-                            v-bind="attrs"
-                            v-on="on"
-                            @click="returnItems(items)"
-                            >mdi-eye</v-icon
-                          >
-                        </template>
-                        <span>View Items</span>
-                      </v-tooltip>
-                    </td>
-                  </tr>
-                </tbody>
-              </v-simple-table>
+              <v-data-table
+    :headers="headers"
+    :items="all_products"
+    item-key="salesID"
+    dense
+  >
+    <template v-slot:top>
+      <v-toolbar flat>
+        <v-toolbar-title>Products</v-toolbar-title>
+        <v-spacer></v-spacer>
+        <!-- Add any additional toolbar items here -->
+      </v-toolbar>
+    </template>
+
+    <template v-slot:item="{ item }">
+      <tr>
+        <td>{{ item.salesID }}</td>
+        <td>{{ item.item_count }}</td>
+        <td>{{ item.total_sum }}</td>
+        <td>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-icon
+                color="primary"
+                v-bind="attrs"
+                v-on="on"
+                @click="returnItems(item)"
+              >
+                mdi-eye
+              </v-icon>
+            </template>
+            <span>View Items</span>
+          </v-tooltip>
+        </td>
+      </tr>
+    </template>
+
+  </v-data-table>
             </v-card-text>
           </v-card>
         </v-col>
@@ -122,7 +129,7 @@
     <!-- DIALOG FOR RETURN ITEMS -->
     <v-dialog v-model="return_dialog" width="40%">
       <v-card>
-        <v-card-title> Return Item </v-card-title>
+        <v-card-title> View Item </v-card-title>
         <v-card-text>
           <v-simple-table class="border">
             <thead>
@@ -168,21 +175,30 @@
 
 <script>
 import axios from "axios";
+import Excel from "exceljs";
+import { saveAs } from "file-saver";
+import moment from "moment";
+// import _ from "lodash"
 export default {
   data: () => {
     return {
+      sales_extracted:[],
       editModeReturn: false,
       return_dialog: false,
       showDatePicker: false,
       from_date: null,
       all_products: [],
       saled_items: [],
-      menu: false,
-      date: "",
+      first_date_menu: false,
+      second_date_menu: false,
+      first_date: moment().subtract(1, 'month').format("YYYY-MM-DD"),
+      second_date: moment().format("YYYY-MM-DD"),
       headers: [
-        { text: "Sale Invoice Number", value: "salesID" },
-        { text: "Total Products ", value: "item_count" },
-        { text: "Total Price", value: "total_sum" },
+        { text: "Sales ID", value: "salesID" },
+        { text: "Item Count", value: "item_count" },
+        { text: "Total Sum", value: "total_sum" },
+        { text: "Action",sort:false },
+        // Add more headers as needed
       ],
       headers_products: [
         { text: "Item", value: "item" },
@@ -193,8 +209,73 @@ export default {
     };
   },
   methods: {
+    filterDate(){
+      this.getAllProducts()
+    },
+    extractionData() {
+  axios.get(`http://localhost:12799/sales/api/getSalesExtraction/${this.first_date}/${this.second_date}`)
+    .then((response) => {
+      const sales_extracted = response.data;
+      return this.firstProcess(sales_extracted);
+    })
+    .then((buffer) => {
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      saveAs(blob, `Sales Extraction(${moment().format("YYYY-MM-DD")})`);
+    })
+    .catch((error) => {
+      console.error("Error fetching sales data:", error);
+    });
+},
+
+firstProcess(sales_extracted) {
+  return new Promise((resolve, reject) => {
+    const headers = {
+      id: "ID",
+      salesID: "Sale ID",
+      productNumber: "Product Number",
+      item: "Item",
+      salesPrice: "Sales Price",
+      quantity: "Quantity",
+      total: "Total",
+      date: "Date",
+    };
+    const excel_data = [headers, ...sales_extracted]; // Place headers first
+    const workbook = new Excel.Workbook();
+    const DetailedSheet = workbook.addWorksheet("Detailed");
+
+    DetailedSheet.columns = [
+      { key: "A", width: 25 },
+      { key: "B", width: 25 },
+      { key: "C", width: 25 },
+      { key: "D", width: 25 },
+      { key: "E", width: 25 },
+      { key: "F", width: 25 },
+      { key: "G", width: 25 },
+      { key: "H", width: 25 },
+    ];
+
+    excel_data.forEach((value, index) => {
+      DetailedSheet.getRow(index + 1).height = 25;
+
+      Object.keys(value).forEach((key, columnIndex) => {
+        DetailedSheet.getCell(`${String.fromCharCode(65 + columnIndex)}${index + 1}`).value = value[key];
+      });
+    });
+
+    workbook.xlsx.writeBuffer()
+      .then((buffer) => {
+        resolve(buffer);
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
+},
+
     getAllProducts() {
-      axios.get("https://pos-server-ktwz.vercel.app/sales/api/getSales").then((res) => {
+      axios.get(`http://localhost:12799/sales/api/getSales/${this.first_date}/${this.second_date}`).then((res) => {
         console.log(res.data);
         this.all_products = res.data
       });
@@ -213,14 +294,14 @@ export default {
      let updatedTotal =  this.saled_items.reduce((acc, product) => acc + product.total, 0);
       let index = this.all_products.findIndex(product => product.salesID === item.salesID)
       this.all_products[index].total_sum = updatedTotal
-      axios.post('https://pos-server-ktwz.vercel.app/sales/api/updateSales',item)
-      axios.post('https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStock',item)
+      axios.post('http://localhost:12799/sales/api/updateSales',item)
+      axios.post('http://localhost:12799/sales/api/updateInventoryStock',item)
         // .then((res)=>{
 
         // })
     },
     returnItems(val) {
-      axios.get(`https://pos-server-ktwz.vercel.app/sales/api/getbySalesId/${val.salesID}`).then((res) => {
+      axios.get(`http://localhost:12799/sales/api/getbySalesId/${val.salesID}`).then((res) => {
         this.saled_items = [];
       this.return_dialog = true;
       let arr_product = res.data;

@@ -1,26 +1,31 @@
-import Vue from 'vue';
-import Vuex from 'vuex';
+import Vue from 'vue'
+import Vuex from 'vuex'
+import CreatedPersistedState from 'vuex-persistedstate'
 
-Vue.use(Vuex);
-
-const defaultDiscountValue = "20";
+Vue.use(Vuex)
 
 export default new Vuex.Store({
-    state: {
-        discountValue: parseInt(!localStorage.getItem('discountValue')?defaultDiscountValue:localStorage.getItem('discountValue'))
-    },
-    mutations: {
-        setDiscountValue(state, newValue) {
-            state.discountValue = newValue;
-            localStorage.setItem('discountValue', newValue);
-        }
-    },
-    actions: {
-        saveDiscountValue({ commit }, newValue) {
-            commit('setDiscountValue', newValue);
-        }
-    },
-    getters: {
-        getDiscountValue: state => state.discountValue
-    }
-});
+  state: {
+    storedEmp:[],
+    storeName:"",
+  },
+
+  mutations: {
+    STORE_EMP: (state,newState) => {
+      state.storedEmp = newState;
+
+  },
+  STORE_NAME: (state,newState) => {
+    state.storeName = newState;
+
+},
+  },
+  actions: {
+  },
+  modules: {
+  },
+
+  plugins:[
+    CreatedPersistedState()
+  ]
+})

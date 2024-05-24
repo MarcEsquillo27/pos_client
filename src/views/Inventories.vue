@@ -6,9 +6,14 @@
         <v-col cols="12" sm="6">
           <v-text-field outlined rounded color="primary" dense label="Search" />
         </v-col>
-        <v-col cols="12" sm="6" class="text-right">
+        <v-col cols="6" sm="3" class="text-right">
           <v-btn @click="openDialog()" rounded color="primary" dense>Add Item</v-btn>
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
+        </v-col>
+        <v-col cols="6" sm="3">
+          <v-btn @click="extractionData()" color="success">
+            <v-icon>mdi-microsoft-excel</v-icon> Extract Data
+          </v-btn>
         </v-col>
       </v-row>
       <v-row justify="center">
@@ -74,14 +79,14 @@
                     ? 'background-color:#CE4257;color:white;'
                     : ''
                 "
-                v-for="(items, index) in paginatedItems"
+                v-for="(items, index) in InventoriesProduct"
                 :key="index"
               >
                 <td>{{ items.productNumber }}</td>
                 <td>{{ items.item }}</td>
                 <td>{{ items.unit }}</td>
                 <td>{{ items.brand }}</td>
-                <td>{{ items.category }}</td>
+                <td>{{ items.categoryName }}</td>
                 <td>{{ items.description }}</td>
                 <td>
                   <span :class="items.stock == 0 ? 'blink' : ''">{{
@@ -103,9 +108,15 @@
           </v-simple-table>
         </v-col>
       </v-row>
-      <v-row><v-col>
-        <v-pagination v-model="currentPage" :length="numPages" @input="changePage" />
-      </v-col></v-row>
+      <v-row
+        ><v-col>
+          <v-pagination
+            v-model="currentPage"
+            :length="totalPages"
+            :total-visible="5"
+            color="primary"
+          /> </v-col
+      ></v-row>
       <v-dialog v-model="add_dialog" width="40%">
         <v-card>
           <v-card-title> Add Item </v-card-title>
@@ -138,12 +149,18 @@
               outlined
               dense
             ></v-text-field>
-            <v-text-field
-              v-model="insertItem.category"
-              label="Category"
+            <v-autocomplete
               outlined
+              v-model="insertItem.categoryID"
+              clearable
+              color="primary"
               dense
-            ></v-text-field>
+              label="Category"
+              :items="list_of_category"
+              :item-text="(elem) => elem.categoryName"
+              :item-value="(elem) => elem.categoryID"
+            />
+            {{ insertItem.category }}
             <v-text-field
               v-model="insertItem.description"
               label="Description"
@@ -229,16 +246,27 @@ import axios from "axios";
 import moment from "moment";
 import _ from "lodash";
 import Swal from "sweetalert2";
+
+import Excel from "exceljs";
+import { saveAs } from "file-saver";
+import secret_key from "../plugins/md5decrypt";
 export default {
   data: () => {
     return {
-      currentPage: 1, // Current page number
-      itemsPerPage: 5, // Number of items per page
+      apiUrl: process.env.VUE_APP_API_URL,
+      search: "",
+      dialog: false,
+      dialogDelete: false,
+      dialogEdit: false,
+      currentPage: 1,
+      itemsPerPage: 10,
+      totalPages: 0,
       addButton: false,
       editButton: false,
       add_dialog: false,
       showDatePicker: false,
       from_date: null,
+      list_of_category: [],
       all_products: [],
       low_products: false,
       filter_all: false,
@@ -263,12 +291,12 @@ export default {
       ],
     };
   },
-  computed: {
-    paginatedItems() {
-      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-      const endIndex = startIndex + this.itemsPerPage;
-      return this.InventoriesProduct.slice(startIndex, endIndex);
+  watch: {
+    currentPage() {
+      this.fetchProducts();
     },
+  },
+  computed: {
     numPages() {
       return Math.ceil(this.InventoriesProduct.length / this.itemsPerPage);
     },
@@ -284,11 +312,121 @@ export default {
     },
   },
   methods: {
-    changePage(page) {
-      this.currentPage = page;
+    extractionData() {
+      console.log(this.all_);
+      const firstProcess = () => {
+        return new Promise((resolve) => {
+          const headers = {
+            productNumber: "Product Number",
+            item: "Item",
+            unit: "Unit",
+            brand: "Brand",
+            category: "Category",
+            description: "Description",
+            stock: "Stock",
+            originalPrice: "Orignal Price",
+            salesPrice: "Sales Price",
+          };
+          const excel_data = [...this.all_products];
+          const workbook = new Excel.Workbook();
+          const DetailedSheet = workbook.addWorksheet("Detailed");
+          // let indexCell = { detailed: 1, summary: 1 };
+
+          DetailedSheet.columns = [
+            { key: "A1", width: 25 },
+            { key: "B1", width: 25 },
+            { key: "C1", width: 25 },
+            { key: "D1", width: 25 },
+            { key: "E1", width: 25 },
+            { key: "F1", width: 25 },
+            { key: "G1", width: 25 },
+            { key: "H1", width: 25 },
+            { key: "I1", width: 25 },
+          ];
+
+          excel_data.unshift(headers);
+          // console.log(filterExtractedDate);
+
+          excel_data.forEach((value, index) => {
+            DetailedSheet.getRow(index).height = 25;
+
+            let column = [
+              { key: "A", value: value.productNumber },
+              { key: "B", value: value.item },
+              {
+                key: "C",
+                value: value.unit,
+              },
+              { key: "D", value: value.brand },
+              { key: "E", value: value.category },
+              { key: "F", value: value.description },
+              { key: "G", value: value.stock },
+              { key: "H", value: value.originalPrice },
+              { key: "I", value: value.salesPrice },
+            ];
+
+            let headers = value.ReceivedDate == "Customer Code" ? true : false;
+            let borders = {
+              top: { style: "thin" },
+              left: { style: "thin" },
+              bottom: { style: "thin" },
+              right: { style: "thin" },
+            };
+            // let alignment = { wrapText: true };
+            let headerFont = { name: "Arial", size: 10, bold: true };
+            let Font = { name: "Arial", size: 10, bold: false };
+
+            column.forEach((letter) => {
+              // DetailedSheet.getCell(`${letter.key}${index + 1}`).alignment =
+              //   letter.key == "M" ? alignment : {};
+              DetailedSheet.getCell(`${letter.key}${index + 1}`).border = borders;
+              DetailedSheet.getCell(`${letter.key}${index + 1}`).font = headers
+                ? headerFont
+                : Font;
+              DetailedSheet.getCell(`${letter.key}${index + 1}`).value = letter.value;
+              if (index + 1 > 1) {
+                let heightCell = 0;
+                if (letter.key == "S") {
+                  let kahitano = letter.value.split("\n");
+                  heightCell = kahitano.length * 11;
+                  DetailedSheet.getRow(index + 1).height = heightCell;
+                }
+              }
+              if (letter.key !== "S") {
+                DetailedSheet.getCell(`${letter.key}${index + 1}`).alignment = {
+                  vertical: "middle",
+                  horizontal: "center",
+                };
+              }
+            });
+          });
+
+          const buffer = workbook.xlsx.writeBuffer();
+          resolve(buffer);
+        });
+      };
+      firstProcess().then((val) => {
+        const blob = new Blob([val], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        saveAs(blob, `Extraction Master(${moment().format("YYYY-MM-DD")})`);
+      });
+      // const buffer = workbook.csv.writeBuffer();
+      //     resolve(buffer);
+      //   });
+      // };
+      // firstProcess().then((val) => {
+      //   const blob = new Blob([val], {
+      //     type: "text/csv",
+      //   });
+      //   saveAs(blob, `Extraction Master(${moment().format("YYYY-MM-DD")})`);
+      // });
     },
+
     checkSameBarcode(val) {
-      axios.get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`).then((res) => {
+      axios.get(`${this.apiUrl}/inventory/api/getPerItem/${val}`,{ headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },}).then((res) => {
         if (res.data.length) {
           Swal.fire({
             title: "Product Code Exist!",
@@ -364,15 +502,29 @@ export default {
       this.editButton = false;
       this.insertItem = {};
     },
-    getAllProducts() {
-      axios.get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory").then((res) => {
-        this.all_products = res.data;
-      });
+    fetchProducts() {
+      axios
+        .get(`${this.apiUrl}/inventory/api/getInventory`, {
+          params: {
+            page: this.currentPage,
+            page_size: this.itemsPerPage,
+          }, headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+        })
+        .then((res) => {
+          const data = res.data;
+          this.all_products = data.products;
+          console.log(data.products);
+          this.totalPages = Math.ceil(data.totalItems / this.itemsPerPage);
+        });
     },
     updateInventory(val) {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       axios
-        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventory", val)
+        .post(`${this.apiUrl}/inventory/api/updateInventory`, val,{ headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },})
         .then(() => {
           // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
@@ -385,7 +537,9 @@ export default {
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
+          axios.post(`${this.apiUrl}/inventory/audit/api/addLogs`, audit_logs,{ headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },});
         })
         .catch((err) => {
           alert(err);
@@ -403,7 +557,9 @@ export default {
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       axios
-        .post("https://pos-server-ktwz.vercel.app/inventory/api/addInventory", add_data)
+        .post(`${this.apiUrl}/inventory/api/addInventory`, add_data,{ headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },})
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("NEW ITEM ADDED");
@@ -417,15 +573,27 @@ export default {
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{ headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },});
         })
         .catch((err) => {
           alert(err);
         });
     },
+    getAllCategories() {
+      axios.get(`${this.apiUrl}/category/api/getCategory`,{ headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },}).then((res) => {
+        this.list_of_category = res.data;
+      });
+    },
   },
   mounted() {
-    this.getAllProducts();
+    this.fetchProducts();
+    this.getAllCategories();
+    this.authorization = secret_key(this.$store.state.storedEmp.token);
+
   },
 };
 </script>

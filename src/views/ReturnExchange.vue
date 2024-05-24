@@ -4,54 +4,36 @@
       <h1>Return and Exchange<v-icon>mdi-cash-refund</v-icon></h1>
       <v-row>
         <v-col cols="6" sm="6">
-          <v-text-field outlined rounded color="primary" dense label="Search" />
+          <v-text-field v-model="search" outlined rounded color="primary" dense label="Search" />
         </v-col>
       </v-row>
       <v-row>
         <v-col cols="12">
           <v-card>
             <v-card-text>
-              <v-simple-table class="border" dense>
-                <thead>
-                  <tr>
-                    <th v-for="(items, index) in headers" :key="index">
-                      {{ items.text }}
-                    </th>
-                    <th colspan="2">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(items, index) in all_products" :key="index">
-                    <td>{{ items.salesID }}</td>
-                    <td>{{ items.item_count }}</td>
-                    <td>{{ items.total_sum }}</td>
-                    <!-- <td v-if="!items.editMode">
-                      <v-icon color="primary" @click="toggleEditMode(items)"
-                        >mdi-pencil</v-icon
-                      >
-                    </td>
-                    <td v-else>
-                      <v-icon color="primary" @click="items.editMode = false"
-                        >mdi-close</v-icon
-                      >
-                    </td> -->
-                    <td>
-                      <v-tooltip bottom>
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-icon
-                            color="error"
-                            v-bind="attrs"
-                            v-on="on"
-                            @click="returnItems(items)"
-                            >mdi-cash-refund</v-icon
-                          >
-                        </template>
-                        <span>Return Items</span>
-                      </v-tooltip>
-                    </td>
-                  </tr>
-                </tbody>
-              </v-simple-table>
+          <v-data-table
+  :headers="headers"
+  :search="search"
+  :items="all_products"
+  dense
+>
+  <template slot="item.actions" slot-scope="{ item }">
+    <v-tooltip bottom>
+      <template v-slot:activator="{ on, attrs }">
+        <v-icon
+          color="error"
+          v-bind="attrs"
+          v-on="on"
+          @click="returnItems(item)"
+        >
+          mdi-cash-refund
+        </v-icon>
+      </template>
+      <span>Return Items</span>
+    </v-tooltip>
+  </template>
+</v-data-table>
+
             </v-card-text>
           </v-card>
         </v-col>
@@ -75,32 +57,22 @@
               <tr v-for="(items, index) in saled_items" :key="index">
                 <td>{{ items.item }}</td>
                 <td>{{ items.salesPrice }}</td>
-                <td v-if="!items.editModeReturn">{{ items.quantity }}</td>
-                <td v-else>
-                  <v-text-field dense block type="number" v-model="items.quantity" />
-                  <v-btn x-small color="success" @click="saveChanges(items)">Save</v-btn>
-                </td>
+                <td>{{ items.quantity }}</td>
                 <td>{{ items.total }}</td>
-                <td v-if="!items.editModeReturn">
+                <td>
                   <v-tooltip bottom>
                     <template v-slot:activator="{ on, attrs }">
                       <v-icon
                         color="success"
                         v-bind="attrs"
                         v-on="on"
-                        @click="items.editModeReturn = true"
+                        @click="editItems(items)"
                         >mdi-pencil</v-icon
                       >
                     </template>
                     <span>Edit Quantity</span>
                   </v-tooltip>
                 </td>
-                <td v-else>
-                  <v-icon color="success" @click="items.editModeReturn = false"
-                    >mdi-close</v-icon
-                  >
-                </td>
-
                 <td>
                   <v-tooltip bottom>
                     <template v-slot:activator="{ on, attrs }">
@@ -115,20 +87,6 @@
                     <span>Refund Item</span>
                   </v-tooltip>
                 </td>
-                <td>
-                  <v-tooltip bottom>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-icon
-                        v-bind="attrs"
-                        v-on="on"
-                        color="primary"
-                        @click="toggleExchange(items)"
-                        >mdi-archive-refresh</v-icon
-                      >
-                    </template>
-                    <span>Exchange Item</span>
-                  </v-tooltip>
-                </td>
               </tr>
             </tbody>
           </v-simple-table>
@@ -137,11 +95,38 @@
     </v-dialog>
 
     <!-- DIALOG FOR EXCHANGE ITEM -->
-    <v-dialog v-model="exchange_dialog">
+    <v-dialog v-model="exchange_dialog" width="500">
       <v-card>
-      
-          <Exchange />
-       
+          <v-card-title>
+            Edit Item
+          </v-card-title>
+          <v-card-text>
+            <v-autocomplete
+            outlined
+            clearable
+            color="primary"
+            dense
+            label="Product"
+            :items="list_of_products"
+            :item-text="
+              (elem) => {
+                return elem.productNumber + ' : ' + elem.item;
+              }
+            "
+            item-value="productNumber"
+            v-model="toUpdate.productNumber"
+            @change="getItemDetails(toUpdate.productNumber)"
+
+          />
+           Remaining Stock {{ toUpdate.stock }}
+            <v-text-field type="number" v-model="toUpdate.salesPrice" label="Price" readonly outlined dense></v-text-field>
+            <v-text-field type="number" v-model="quantity" @change="computeTotal()" label="Quantity" outlined dense></v-text-field>
+            Total: {{ total }}
+          </v-card-text>
+          <v-card-actions>
+            <v-btn :disabled="toExchange?true:false" color="primary" @click="updateSales()">Exchange</v-btn>
+            <v-btn :disabled="!toExchange?true:false" color="success" @click="returnItem(toUpdate)">Return</v-btn>
+          </v-card-actions>
       </v-card>
     </v-dialog>
   </div>
@@ -149,13 +134,15 @@
 
 <script>
 import axios from "axios";
-import Exchange from "../components/ExchangeDialog.vue"
+import Swal from "sweetalert2";
 export default {
-     components: {
-        Exchange,
-    },
   data: () => {
     return {
+      total:null,
+      toExchange:true,
+      remaining_stock:null,
+      search:"",
+      quantity:"",
       editModeReturn: false,
       return_dialog: false,
       showDatePicker: false,
@@ -163,12 +150,14 @@ export default {
       from_date: null,
       all_products: [],
       saled_items: [],
+      list_of_products:[],
       menu: false,
       date: "",
       headers: [
-        { text: "Sale Invoice Number", value: "salesID" },
-        { text: "Total Products ", value: "item_count" },
-        { text: "Total Price", value: "total_sum" },
+        { text: 'Sales ID', value: 'salesID' },
+      { text: 'Item Count', value: 'item_count' },
+      { text: 'Total Sum', value: 'total_sum' },
+      { text: 'Actions', value: 'actions', sortable: false },
       ],
       headers_products: [
         { text: "Item", value: "item" },
@@ -176,14 +165,86 @@ export default {
         { text: "Quantity", value: "quantity" },
         { text: "Total", value: "total" },
       ],
-    };
+      toUpdate: {
+      productNumber: null,
+      stock: null,
+      price: null
+    },
+    toOldItem:[],
+    };  
   },
   methods: {
+    returnItem(){
+      console.log(this.toUpdate)
+      // let old_quantity = val.stock
+      let stock_toAdd = this.toUpdate.quantity - this.quantity
+      this.toUpdate.stock = this.toUpdate.stock + stock_toAdd
+      this.toUpdate.quantity = this.quantity
+      this.toUpdate.total = this.toUpdate.salesPrice * this.quantity
+      axios.post("http://localhost:12799/sales/api/updateSales",  this.toUpdate);
+      axios.post("http://localhost:12799/sales/api/updateInventoryStock", this.toUpdate);
+      Swal.fire({
+  title: "Item Changed",
+  icon: "success",
+  timer: 1500
+}); 
+  location.reload();
+    },
+    async updateSales(){
+      this.toUpdate.quantity = this.quantity
+      this.toUpdate.total = this.toUpdate.salesPrice * this.quantity
+      this.toUpdate.stock = this.toUpdate.stock - this.quantity
+     await axios.post("http://localhost:12799/sales/api/updateSales",  this.toUpdate);
+     await axios.post("http://localhost:12799/sales/api/updateInventoryStock", this.toUpdate);
+// console.log(this.toOldItem)
+      this.toOldItem[0].stock = this.toOldItem[0].stock + this.toOldItem[0].quantity
+     await axios.post("http://localhost:12799/sales/api/updateInventoryStockReturn", this.toOldItem[0]);
+      Swal.fire({
+  title: "Item Changed",
+  icon: "success",
+  timer: 1500
+}); 
+  location.reload();
+    },
+    computeTotal(){
+      this.total = this.toUpdate.salesPrice * this.quantity
+    },
+    getItemDetails(val){
+      this.toExchange = false
+      axios.get(`http://localhost:12799/inventory/api/getPerItem/${val}`).then((res)=>{
+        for (let i = 0; i < res.data.length; i++) {
+          const element = res.data[i];
+          this.toUpdate.stock = element.stock
+          this.toUpdate.salesPrice = element.salesPrice
+        }
+      })
+      this.quantity = null
+
+    },
+    editItems(val){
+      const oldItem = JSON.parse(JSON.stringify(val));
+  this.toOldItem.push(oldItem);
+      console.log(this.toOldItem,"221")
+      this.toUpdate = val
+      this.quantity = val.quantity
+      this.exchange_dialog = true
+      this.total = this.toUpdate.salesPrice * this.toUpdate.quantity
+    },
+    getAllItems() {
+      axios.get("http://localhost:12799/inventory/api/getInventory").then((res) => {
+        this.list_of_products = res.data.filter((rec)=>{
+          if(rec.stock > 0){
+            return rec
+          }
+        });
+        console.log(res.data)
+      });
+    },
     toggleExchange() {
       this.exchange_dialog = true;
     },
     getAllProducts() {
-      axios.get("https://pos-server-ktwz.vercel.app/sales/api/getSales").then((res) => {
+      axios.get("http://localhost:12799/sales/api/getAllSales").then((res) => {
         console.log(res.data);
         this.all_products = res.data;
       });
@@ -206,15 +267,17 @@ export default {
         (product) => product.salesID === item.salesID
       );
       this.all_products[index].total_sum = updatedTotal;
-      axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateSales", item);
-      axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStock", item);
+      axios.post("http://localhost:12799/sales/api/updateSales", item);
+      axios.post("http://localhost:12799/sales/api/updateInventoryStock", item);
       // .then((res)=>{
 
       // })
     },
     returnItems(val) {
+      console.log(val)
+      this.toUpdate.salesID = val.salesID
       axios
-        .get(`https://pos-server-ktwz.vercel.app/sales/api/getbySalesId/${val.salesID}`)
+        .get(`http://localhost:12799/sales/api/getbySalesId/${val.salesID}`)
         .then((res) => {
           this.saled_items = [];
           this.return_dialog = true;
@@ -248,6 +311,7 @@ export default {
   },
   mounted() {
     this.getAllProducts();
+    this.getAllItems()
   },
 };
 </script>

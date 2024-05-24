@@ -1,25 +1,27 @@
 <template>
   <div>
     <v-container fluid>
-      <h1>Category</h1>
+      <h1>Account</h1>
       <v-row>
         <v-col cols="12" sm="6">
           <v-text-field outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="12" sm="6" class="text-right">
-          <v-btn @click="openDialog()" rounded color="primary" dense>Add Item</v-btn>
+          <v-btn @click="openDialog()" rounded color="primary" dense>Add Employee</v-btn>
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
         </v-col>
       </v-row>
-      
+
       <v-row>
         <v-col cols="12">
           <v-simple-table class="border">
             <thead>
               <tr style="background-color: #1976d2">
-                <th style="color: white" v-for="(items, index) in headers" :key="index">
-                  {{ items.text }}
-                </th>
+                <th style="color: white">ID</th>
+                <th style="color: white">Name</th>
+                <th style="color: white">Username</th>
+                <th style="color: white">Acces Right</th>
+                <th style="color: white">Acces Drawer</th>
                 <th style="color: white" colspan="2">Action</th>
               </tr>
             </thead>
@@ -32,56 +34,91 @@
                     ? 'background-color:#CE4257;color:white;'
                     : ''
                 "
-                v-for="(items, index) in paginatedItems"
+                v-for="(items, index) in all_products"
                 :key="index"
               >
-                <td>{{ items.categoryID }}</td>
-                <td>{{ items.categoryName }}</td>
-                <td>{{ items.description }}</td>
-                <td>{{ formatdate(items.date) }}</td>
+                <td>{{ items.id }}</td>
+                <td>{{ items.fullname }}</td>
+                <td>{{ items.username }}</td>
+                <td>{{ items.access }}</td>
+                <td>{{ items.drawer_access }}</td>
                 <td>
                   <v-icon color="primary" @click="editInventory(items)"
                     >mdi-pencil</v-icon
                   >
+                </td>
+                <td>
+                  <v-icon color="error" @click="deleteAccount(items)">mdi-delete</v-icon>
                 </td>
               </tr>
             </tbody>
           </v-simple-table>
         </v-col>
       </v-row>
-      <v-row><v-col>
-        <v-pagination v-model="currentPage" :length="numPages" @input="changePage" />
-      </v-col></v-row>
+      <v-row
+        ><v-col>
+          <v-pagination
+            v-model="currentPage"
+            :length="numPages"
+            @input="changePage"
+          /> </v-col
+      ></v-row>
       <v-dialog v-model="add_dialog" width="40%">
         <v-card>
-          <v-card-title> Add Category </v-card-title>
+          <v-card-title> Add Employee </v-card-title>
           <v-card-text>
-            <!-- <v-btn class="mb-2" dense x-small color="primary" @click="barcodeGenerate()"
-              >Generate Barcode</v-btn
-            > -->
             <v-text-field
-              v-model="insertItem.categoryID"
-              label="Category Number"
+              v-model="insertItem.fullname"
+              label="Full Name"
               outlined
               dense
             ></v-text-field>
             <v-text-field
-              v-model="insertItem.categoryName"
-              label="Name"
+              v-model="insertItem.username"
+              label="Username"
               outlined
               dense
             ></v-text-field>
             <v-text-field
-              v-model="insertItem.description"
-              label="Description"
+              v-model="insertItem.password"
+              label="Password"
               outlined
               dense
+              append-outer-icon="mdi-clipboard-outline"
+              @click:append-outer="copyText"
             ></v-text-field>
-         
+
+            <v-autocomplete
+              v-model="insertItem.access"
+              multiple
+              chips
+              label="Acces Right"
+              :items="['Read', 'Write', 'Edit', 'Delete']"
+              outlined
+              dense
+            ></v-autocomplete>
+            <v-autocomplete
+              v-model="insertItem.drawer_access"
+              multiple
+              chips
+              label="Acces Link"
+              :items="[
+                'Inventories',
+                'Discount',
+                'Return and Exchange',
+                'Sale Report',
+                'Category',
+                'Transaction Logs',
+                'Void Logs',
+              ]"
+              outlined
+              dense
+            ></v-autocomplete>
+
             <v-btn
               class="mt-1"
               :style="!addButton ? 'display:none;' : ''"
-              @click="insertCategory(insertItem)"
+              @click="insertInventory(insertItem)"
               color="success"
               block
             >
@@ -100,15 +137,6 @@
         </v-card>
       </v-dialog>
     </v-container>
-    <v-footer class="footer" dense>
-      <v-row>
-        <v-col>
-          Legends: <v-icon style="color: white">mdi-square</v-icon> - Active Stock
-          <v-icon style="color: #ce4257">mdi-square</v-icon> - Low Stock
-          <v-icon style="color: #ffbb64">mdi-square</v-icon> - Out of Stock
-        </v-col>
-      </v-row>
-    </v-footer>
   </div>
 </template>
 
@@ -116,6 +144,7 @@
 import axios from "axios";
 import moment from "moment";
 import _ from "lodash";
+import copy from "copy-to-clipboard";
 import Swal from "sweetalert2";
 export default {
   data: () => {
@@ -131,17 +160,9 @@ export default {
       low_products: false,
       filter_all: false,
       no_products: false,
-      insertItem: {
-        productNumber: "",
-      },
+      insertItem: {},
       menu: false,
       date: "",
-      headers: [
-        { text: "Category ID", value: "categoryID" },
-        { text: "Name", value: "categoryName" },
-        { text: "Description", value: "description" },
-        { text: "Date ", value: "Date" },
-      ],
     };
   },
   computed: {
@@ -165,25 +186,17 @@ export default {
     },
   },
   methods: {
-    formatdate(val){
-      return moment(val).format("YYYY-MM-DD hh:mm:ss")
+    copyText() {
+      copy(this.insertItem.password, {
+        debug: true,
+        message: "copied",
+      });
+      alert("copied");
     },
     changePage(page) {
       this.currentPage = page;
     },
-    checkSameBarcode(val) {
-      axios.get(`http://localhost:12799/inventory/api/getPerItem/${val}`).then((res) => {
-        if (res.data.length) {
-          Swal.fire({
-            title: "Product Code Exist!",
-            text: "Change product code to avoid multiple code",
-            icon: "error",
-          });
-          this.insertItem.productNumber = "";
-          return false;
-        }
-      });
-    },
+
     toggleLowStockFilter() {
       this.low_products = !this.low_products;
       this.no_products = false; // Reset no stock filter
@@ -235,41 +248,83 @@ export default {
       //  totalCapital = val.salesPrice - val.originalPrice
       return !totalCapital ? 0 : totalCapital;
     },
+    deleteAccount(val) {
+      console.log(val);
+      Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({
+            title: "Deleted!",
+            text: "The Account has been deleted.",
+            icon: "success",
+          });
+
+          axios.post("http://localhost:12799/account/api/deleteAccount", val);
+          window.location.reload();
+        }
+      });
+    },
     editInventory(val) {
       this.addButton = false;
       this.insertItem = {};
       this.add_dialog = true;
       this.insertItem = val;
       this.editButton = true;
+      this.autoGeneratePassword();
     },
     openDialog() {
       this.add_dialog = true;
       this.addButton = true;
       this.editButton = false;
       this.insertItem = {};
+      this.autoGeneratePassword();
+    },
+    autoGeneratePassword() {
+      let length = 8;
+      const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let password = "";
+      for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        password += characters.charAt(randomIndex);
+      }
+      this.insertItem.password = password;
+      // console.log(this.insertItem.password);
     },
     getAllProducts() {
-      axios.get("http://localhost:12799/category/api/getCategory").then((res) => {
-        this.all_products = res.data;
+      axios.get("http://localhost:12799/account/api/getAccount").then((res) => {
+        this.all_products = res.data.filter((rec) => {
+          rec.access = JSON.parse(rec.access);
+          rec.drawer_access = JSON.parse(rec.drawer_access);
+          return rec;
+        });
+        console.log(this.all_products);
       });
     },
     updateInventory(val) {
-      val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
+      console.log(val);
       axios
-        .post("http://localhost:12799/category/api/updateCategory", val)
+        .post("http://localhost:12799/account/api/updateAccount", val)
         .then(() => {
-          this.all_products.push(this.insertItem);
-          alert("ITEM UPDATED");
-          this.add_dialog = false;
-          let audit_logs = {
-            action: `Update Category`,
-            description: `Update Category: ${val.categoryName}`,
-            product_number: val.categoryID,
-            quantity: 1,
-            drawer_link: `Category`,
-            date: moment().format("YYYY-MM-DD hh:mm:ss"),
-          };
-          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs);
+          // this.all_products.push(this.insertItem);
+          // alert("ITEM UPDATED");
+          // this.add_dialog = false;
+          // let audit_logs = {
+          //   action: `Update Item`,
+          //   description: `Update Item: ${val.productNumber} stock: ${val.stock}`,
+          //   product_number: val.productNumber,
+          //   quantity: val.stock,
+          //   drawer_link: `Inventories`,
+          //   date: moment().format("YYYY-MM-DD hh:mm:ss"),
+          // };
+          // axios.post("http://localhost:12799/audit/api/addLogs", audit_logs);
+          window.location.reload();
         })
         .catch((err) => {
           alert(err);
@@ -283,25 +338,28 @@ export default {
       this.insertItem.productNumber = twelveDigitNumber;
       this.$forceUpdate(); // Force Vue to update the view
     },
-    insertCategory() {
-      this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
+    insertInventory() {
       let add_data = this.insertItem;
+      console.log(add_data);
       axios
-        .post("http://localhost:12799/category/api/addCategory", add_data)
+        .post("http://localhost:12799/account/api/addAccount", add_data)
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("NEW ITEM ADDED");
           this.add_dialog = false;
 
           let audit_logs = {
-            action: `Added New Category`,
-            description: `NEW Category: ${this.insertItem.categoryName}`,
-            product_number: this.insertItem.categoryID,
-            quantity: 1,
-            drawer_link: `Category`,
+            action: `Added New Employee`,
+            description: `NEW Employee: ${this.insertItem.full}`,
+            product_number: null,
+            quantity: null,
+            drawer_link: `Accounts`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs);
+          axios.post("http://localhost:12799/audit/api/addLogs", audit_logs).then(() => {
+            Swal.fire("Saved!", "", "success");
+            window.location.reload();
+          });
         })
         .catch((err) => {
           alert(err);
@@ -320,13 +378,7 @@ export default {
   background-color: #1976d2;
   color: white;
 }
-.footer {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background-color: #f5f5f5;
-  padding: 1;
-}
+
 @keyframes blink {
   0% {
     opacity: 1;

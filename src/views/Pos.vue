@@ -14,7 +14,7 @@
             :items="list_of_products"
             :item-text="
               (elem) => {
-                return elem.productNumber + ' : ' + elem.item;
+                return elem.productNumber + ' : ' + elem.item + ': ' + elem.stock;
               }
             "
             item-value="productNumber"
@@ -27,7 +27,13 @@
            
           /> -->
         </v-col>
-        <v-col><v-btn @click="pending_dialog = true"><v-icon>mdi-cart-outline</v-icon>Pending Transaction({{ pendingItemArr.length }})</v-btn></v-col>
+        <v-col
+          ><v-btn @click="pending_dialog = true"
+            ><v-icon>mdi-cart-outline</v-icon>Pending Transaction({{
+              list_of_pending.length
+            }})</v-btn
+          ></v-col
+        >
       </v-row>
       <v-row>
         <v-col cols="12" sm="9">
@@ -93,6 +99,7 @@
             <v-row justify="end">
               <v-col cols="6"
                 ><v-checkbox
+                  :disabled="ifdiscount ? true : false"
                   label="
                    20%
                   "
@@ -164,7 +171,6 @@
               class="mt-2"
               >Void</v-btn
             >
-           
           </v-card>
         </v-col>
       </v-row>
@@ -260,9 +266,9 @@
 
     <!-- RECEIPT -->
     <v-dialog v-model="receipt_dialog" width="500">
-      <div>
-        <v-card id="receipt-card">
-          <v-card-text  class="printable">
+      <div style="overflow-y: hidden">
+        <v-card id="receipt-card" style="width: 100%">
+          <v-card-text class="printable">
             <p style="text-align: center">
               <b>Hardware Store Philippines</b><br />
               764-B Street Subdivision Cavite City, Cavite<br />
@@ -275,7 +281,7 @@
               <v-col>Date : 2024-03-21 15:22:16</v-col>
             </v-row>
             <v-divider></v-divider>
-            <v-list>
+            <v-list style="width: 100%">
               <v-list-item>
                 <v-list-item-content>
                   <v-list-item-title>Items</v-list-item-title>
@@ -290,17 +296,22 @@
               <v-list-item-group>
                 <v-list-item v-for="(item, index) in products" :key="index">
                   <v-list-item-content>
-                    <v-list-item-title><p>{{ item.item }}</p></v-list-item-title>
+                    <v-list-item-title
+                      ><p>{{ item.item }}</p></v-list-item-title
+                    >
                   </v-list-item-content>
                   <v-list-item-content>
-                    <v-list-item-title><p>{{ item.quantity }}</p></v-list-item-title>
+                    <v-list-item-title
+                      ><p>{{ item.quantity }}</p></v-list-item-title
+                    >
                   </v-list-item-content>
                   <v-list-item-content class="align-end">
-                    <v-list-item-title><p>{{ item.subtotal }}</p></v-list-item-title>
+                    <v-list-item-title
+                      ><p>{{ item.subtotal }}</p></v-list-item-title
+                    >
                   </v-list-item-content>
                 </v-list-item>
                 <v-divider></v-divider>
-
                 <v-list-item>
                   <v-list-item-content>
                     <v-list-item-title>Total:</v-list-item-title>
@@ -328,10 +339,13 @@
               </v-list-item-group>
             </v-list>
           </v-card-text>
-         
         </v-card>
-        
-        <v-card><v-card-text><v-btn @click="printReceipt()" text>Print</v-btn></v-card-text></v-card>
+
+        <v-card>
+          <v-card-text>
+            <v-btn @click="printReceipt()" text>Print</v-btn>
+          </v-card-text>
+        </v-card>
       </div>
     </v-dialog>
 
@@ -414,8 +428,16 @@
       <v-card>
         <v-card-title>Pending Transaction</v-card-title>
         <v-card-text>
-          <v-row v-for="(items, index) in pendingItemArr" :key="index">
-            <v-col><v-btn @click="backTransaction(items,index)">{{pendingID( items[0].date) }}</v-btn></v-col>
+          <v-row>
+            <v-col>
+              <v-treeview
+                shaped
+                hoverable
+                activatable
+                :items="list_of_pending"
+              ></v-treeview>
+            </v-col>
+            <!-- <v-col><v-btn @click="backTransaction(items,index)">{{pendingID( items[0].date) }}</v-btn></v-col> -->
           </v-row>
         </v-card-text>
       </v-card>
@@ -426,13 +448,15 @@
 <script>
 import axios from "axios";
 import moment from "moment";
-import Swal from "sweetalert2"
+import Swal from "sweetalert2";
 // import printJS from "print-js";
 export default {
   data: () => {
     return {
-      pending_dialog:false,
-      pendingItemArr:[],
+      ifdiscount: true,
+      list_of_pending: [],
+      pending_dialog: false,
+      pendingItemArr: [],
       for_delivery: false,
       discounted: false,
       products_code: "",
@@ -468,34 +492,70 @@ export default {
     };
   },
   methods: {
-    backTransaction(val,index){
-      console.log(val)
+    backTransaction(val, index) {
+      console.log(val);
       let confirmation = confirm("Are you sure you want to continue the transaction?");
       if (confirmation) {
-        this.products = val
+        this.products = val;
         this.total = this.products.reduce((acc, product) => acc + product.subtotal, 0);
-        this.pendingItemArr.splice(index,1)
-        this.pending_dialog = false
-        alert("Transaction Complete")
+        this.pendingItemArr.splice(index, 1);
+        this.pending_dialog = false;
+        alert("Transaction Complete");
       }
     },
-    pendingID(val){
-      return moment(val).format("YYYYMMDDhhmmss")
+    pendingID(val) {
+      return moment(val).format("YYYYMMDDhhmmss");
     },
-    pendingItem(){
+    pendingItem() {
       let confirmation = confirm("Are you sure you want to pending the transaction?");
       if (confirmation) {
-  
-        this.pendingItemArr.push(this.products)
-    
-        
+        let a = 1;
+
+        a++;
+
+        let item = {
+          id: a,
+          name: "test" + a,
+          children: this.products.map((product) => ({
+            id: product.id,
+            name: `${product.productNumber}:${product.item}:${product.subtotal}`,
+          })),
+        };
+        this.list_of_pending.push(item);
+
+        //        for (let i = 0; i < this.products.length; i++) {
+        //   const element = this.products[i];
+        //   let item = {
+        //     id: i,
+        //     name: this.pendingID(element.date),
+        //     children: [{
+        //       id: nnumbum++,
+        //       name: `${element.productNumber}:${element.item}:${element.subtotal}`,
+        //     }],
+        //   };
+
+        //   // Push each product element into the children array of all items in list_of_pending
+        //   for (let j = 0; j < this.list_of_pending.length; j++) {
+        //     this.list_of_pending[j].children.push({
+        //       id: i,
+        //       name: `${element.productNumber}:${element.item}:${element.subtotal}`,
+        //     });
+        //   }
+
+        // // Push the final item to list_of_pending after all iterations
+        // this.list_of_pending.push(item);
+        // console.log(this.list_of_pending, "504");
+
+        // }
+        // this.pendingItemArr.push(this.products)
+
         this.products = [];
         this.products_code = "";
         this.total = 0;
         this.cash = 0;
         this.change = 0;
       }
-      console.log(this.pendingItemArr)
+      console.log(this.pendingItemArr);
     },
     saveDelivery() {
       let get_details = {
@@ -554,7 +614,7 @@ export default {
     //TOTAL DISCOUNT
     totalDiscounted() {
       if (this.discounted) {
-        let discounted_total = this.total * 0.20;
+        let discounted_total = this.total * 0.2;
         let final_total = this.total - discounted_total;
 
         return final_total.toFixed(2);
@@ -575,12 +635,15 @@ export default {
     getProducts(val) {
       if (val) {
         axios
-          .get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`)
+          .get(`http://localhost:12799/inventory/api/getPerItem/${val}`)
           .then((res) => {
             console.log(res.data);
             let result_product = res.data[0];
             result_product.discounted = false;
             // Check if the product already exists in this.products based on its ID
+            this.ifdiscount = this.products.some(
+              (product) => product.discount_id !== null
+            );
             let existingProduct = this.products.find(
               (product) => product.productNumber === result_product.productNumber
             );
@@ -623,11 +686,11 @@ export default {
     purchase() {
       console.log(this.products);
       axios
-        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventoryStock", this.products)
+        .post("http://localhost:12799/inventory/api/updateInventoryStock", this.products)
         .then((res) => {
           console.log(res.data);
           axios
-            .post("https://pos-server-ktwz.vercel.app/sales/api/addSales", this.products)
+            .post("http://localhost:12799/sales/api/addSales", this.products)
             .then(() => {
               this.salesInvoice = moment().format("YYYYMMDDhhmmss");
             })
@@ -643,7 +706,7 @@ export default {
                   date: moment().format("YYYY-MM-DD hh:mm:ss"),
                 };
                 axios
-                  .post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs)
+                  .post("http://localhost:12799/audit/api/addLogs", audit_logs)
                   .then((res) => {
                     console.log(res.data);
                   });
@@ -655,27 +718,28 @@ export default {
           alert(err);
         });
     },
-   
+
     printReceipt() {
       Swal.fire({
-  title: "Transaction Complete",
-  icon: "success",
-  timer: 2000,
-}).then(()=>{
-  window.location.reload();
-});
+        title: "Transaction Complete",
+        icon: "success",
+        timer: 2000,
+      }).then(() => {
+        window.location.reload();
+      });
       setTimeout(() => {
-        const printContents = document.getElementById('receipt-card').innerHTML;
-  const originalContents = document.body.innerHTML;
+        const printContents = document.getElementById("receipt-card").innerHTML;
+        // const originalContents = document.body.innerHTML;
+        // let a = window.open();
+        // a.document.write(printContents);
+        // a.print();
+        document.body.innerHTML = printContents;
 
-  document.body.innerHTML = printContents;
-  window.print();
+        // window.print();
 
-  document.body.innerHTML = originalContents;
-
+        // document.body.innerHTML = originalContents;
       }, 1000);
-
-},
+    },
 
     // ALL @CHANGE FUNCTION
     modeOfPayment(val) {
@@ -689,9 +753,14 @@ export default {
     },
     getAllProducts() {
       axios
-        .get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory")
+        .get("http://localhost:12799/inventory/api/getInventory")
         .then((res) => {
-          this.list_of_products = res.data;
+          this.list_of_products = res.data.filter((rec) => {
+            if (rec.stock > 0) {
+              return rec;
+            }
+          });
+          this.list_of_products;
         })
         .catch((err) => {
           alert(err.message);
@@ -705,7 +774,6 @@ export default {
 </script>
 
 <style scoped>
-
 /* Add any custom styles here */
 th,
 td {
@@ -719,15 +787,11 @@ th {
 
 @media print {
   .printable {
-    border: 1px solid #ccc;
-    padding: 20px;
+    overflow: hidden !important;
+    /* border: 1px solid #ccc;
+    padding: 20px; */
     /* color: red !important; */
     /* Add more print-specific styles */
-  }
-  @page {
-    size: 100mm 297mm; /* Adjust width and height as per your requirement */
-    /* You can also use standard paper sizes like A4, letter, etc. */
-    /* Example: size: A4 landscape; */
   }
 }
 </style>

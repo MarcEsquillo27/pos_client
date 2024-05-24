@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import Pos from '../views/Pos.vue'
+import Login from '../views/Login.vue'
+import Pos from '../views/newPOS.vue'
 import Sales from '../views/SalesReport.vue'
 import Settings from '../views/Settings.vue'
 import Inventories from '../views/Inventories.vue'
@@ -9,14 +9,16 @@ import Audit from '../views/AuditTrail.vue'
 import Return from '../views/ReturnExchange.vue'
 import Category from '../views/Category.vue'
 import Discount from '../views/Discount.vue'
+import Account from '../views/Account.vue'
+import Voids from '../views/VoidLogs.vue'
 
 Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView
+    name: 'login',
+    component: Login
   },
   {
     path: '/pos',
@@ -55,6 +57,15 @@ const routes = [
     path: '/settings',
     name: 'settings',
     component: Settings
+  },
+  {
+    path: '/account_register',
+    name: 'account_register',
+    component: Account
+  },{
+    path: '/void_logs',
+    name: 'void_logs',
+    component: Voids
   },
 ]
 
