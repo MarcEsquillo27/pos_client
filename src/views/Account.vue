@@ -312,19 +312,19 @@ export default {
       axios
         .post("https://pos-server-ktwz.vercel.app/account/api/updateAccount", val)
         .then(() => {
-          // this.all_products.push(this.insertItem);
-          // alert("ITEM UPDATED");
-          // this.add_dialog = false;
-          // let audit_logs = {
-          //   action: `Update Item`,
-          //   description: `Update Item: ${val.productNumber} stock: ${val.stock}`,
-          //   product_number: val.productNumber,
-          //   quantity: val.stock,
-          //   drawer_link: `Inventories`,
-          //   date: moment().format("YYYY-MM-DD hh:mm:ss"),
-          // };
-          // axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
-          window.location.reload();
+          this.all_products.push(this.insertItem);
+          alert("ITEM UPDATED");
+          this.add_dialog = false;
+          let audit_logs = {
+            action: `Update Account`,
+            description: `Update Employee: ${this.insertItem.full}`,
+            product_number: val.productNumber,
+            quantity: val.stock,
+            drawer_link: `Accounts`,
+            date: moment().format("YYYY-MM-DD hh:mm:ss"),
+          };
+          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
+          // window.location.reload();
         })
         .catch((err) => {
           alert(err);
