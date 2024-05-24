@@ -50,15 +50,18 @@ export default {
   name: "Login",
   data() {
     return {
+      apiUrl: process.env.VUE_APP_API_URL,
+
       username: "",
       password: "",
+      
     };
   },
   methods: {
     login() {
       axios
         .get(
-          `http://localhost:12799/login/api/getPerAccount/${this.username}/${this.password}`
+          `${this.apiUrl}/login/api/getPerAccount/${this.username}/${this.password}`
         )
         .then((res) => {
           console.log(res.data);
@@ -83,6 +86,9 @@ export default {
       // axios.get(`/api/getPerAccount/${
     },
   },
+  mounted(){
+    console.log(this.apiUrl)
+  }
 };
 </script>
 <style scoped>
