@@ -690,7 +690,7 @@ export default {
     },
     fetchProducts() {
       axios
-        .get(`${this.apiUrl}/inventory/api/getInventory`, {
+        .get(`https://pos-server-ktwz.vercel.app/inventory/api/getInventory`, {
           params: {
             page: this.currentPage,
             page_size: this.itemsPerPage,
@@ -842,7 +842,7 @@ export default {
         let void_items = [];
         void_items.push(item);
         axios
-          .post(`${this.apiUrl}/void/api/addVoid`, void_items, {
+          .post(`https://pos-server-ktwz.vercel.app/void/api/addVoid`, void_items, {
             headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
@@ -890,7 +890,7 @@ export default {
     getProducts(val) {
       if (val) {
         axios
-          .get(`${this.apiUrl}/inventory/api/getPerItem/${val}`, {
+          .get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`, {
             headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
@@ -964,7 +964,7 @@ export default {
     purchase() {
       axios
         .post(
-          `${this.apiUrl}/inventory/api/updateInventoryStock`,
+          `https://pos-server-ktwz.vercel.app/inventory/api/updateInventoryStock`,
           this.products,
           {
            headers: {
@@ -975,7 +975,7 @@ export default {
         .then((res) => {
           console.log(res.data);
           axios
-            .post(`${this.apiUrl}/sales/api/addSales`, this.products, {
+            .post(`https://pos-server-ktwz.vercel.app/sales/api/addSales`, this.products, {
               headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
@@ -995,7 +995,7 @@ export default {
                   date: moment().format("YYYY-MM-DD hh:mm:ss"),
                 };
                 axios
-                  .post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
+                  .post(`https://pos-server-ktwz.vercel.app/audit/api/addLogs`, audit_logs, {
                     headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
@@ -1101,7 +1101,7 @@ export default {
       // console.log(secret_key(this.$store.state.storedEmp.token))
       // let token = 
       axios
-        .get(`${this.apiUrl}/category/api/getCategory`, {
+        .get(`https://pos-server-ktwz.vercel.app/category/api/getCategory`, {
           headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
