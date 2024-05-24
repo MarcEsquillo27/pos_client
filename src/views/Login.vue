@@ -61,7 +61,7 @@ export default {
     login() {
       axios
         .get(
-          `${this.apiUrl}/login/api/getPerAccount/${this.username}/${this.password}`
+          `https://pos-server-ktwz.vercel.app/login/api/getPerAccount/${this.username}/${this.password}`
         )
         .then((res) => {
           console.log(res.data);
