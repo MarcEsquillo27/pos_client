@@ -312,7 +312,7 @@ export default {
       axios
         .post("https://pos-server-ktwz.vercel.app/account/api/updateAccount", val)
         .then(() => {
-          this.all_products.push(this.insertItem);
+          // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
           this.add_dialog = false;
           let audit_logs = {
