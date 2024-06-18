@@ -1,44 +1,35 @@
 <template>
   <v-app>
-    <!-- 
-
-     -->
     <v-navigation-drawer
-    :style="this.$store.state.storedEmp.token ? '' : 'display:none'" 
-      
+      :style="this.$store.state.storedEmp.token ? '' : 'display:none'"
       v-model="navDrawer"
       app
     >
       <v-list>
-        <v-list-item v-for="(item, index) in navList" :key="index" :to="item.to">
-          
+        <v-list-item v-for="(item, index) in filteredNavList" :key="index" :to="item.to">
           <v-list-item-icon>
             <v-icon>{{ item.icon }}</v-icon>
           </v-list-item-icon>
-          <v-list-item-title> {{ item.title }} </v-list-item-title>
+          <v-list-item-title>{{ item.title }}</v-list-item-title>
         </v-list-item>
       </v-list>
       <template v-slot:append>
         <div class="pa-2">
           <v-btn @click="logout()" block color="error">
-            Logout <v-icon>mdi-logout</v-icon></v-btn
-          >
+            Logout <v-icon>mdi-logout</v-icon>
+          </v-btn>
         </div>
       </template>
     </v-navigation-drawer>
-    <!-- 
 
-     -->
     <v-app-bar
       :style="this.$store.state.storedEmp.token ? '' : 'display:none'"
-
       app
       color="primary"
       dark
     >
       <v-app-bar-nav-icon @click="navDrawer = !navDrawer"></v-app-bar-nav-icon>
-
-      <!-- {{ this.$store.state.storedEmp.userdetails[0].username }} -->
+      <!-- {{ access }} -->
     </v-app-bar>
 
     <v-main>
@@ -50,15 +41,10 @@
 <script>
 export default {
   name: "App",
-
   data: () => ({
     navDrawer: false,
     navList: [
-      {
-        title: "Dashboard",
-        icon: "mdi-view-dashboard-variant-outline",
-        to: "/dashboard",
-      },
+      { title: "Dashboard", icon: "mdi-view-dashboard-variant-outline", to: "/dashboard" },
       { title: "Point of Sale", icon: "mdi-point-of-sale", to: "/pos" },
       { title: "Inventories", icon: "mdi-format-list-checks", to: "/inventories" },
       { title: "Discount", icon: "mdi-sale", to: "/discount" },
@@ -70,11 +56,33 @@ export default {
       { title: "Account Registration", icon: "mdi-account", to: "/account_register" },
       { title: "Settings", icon: "mdi-cog", to: "/settings" },
     ],
-    methods: {
-      logout() {
-        this.$store.commit("logout");
-      },
-    },
   }),
+  computed: {
+    filteredNavList() {
+      return this.navList.filter(item => {
+        const matchingAccessRight = this.access.find(access => {
+          const linkMapping = {
+            "pos": "POS",
+            "inventories": "Inventories",
+            "discount": "Discount",
+            "return": "Return and Exchange",
+            "sales_report": "Sale Report",
+            "category": "Category",
+            "audit_trail": "Transaction Logs",
+            "void_logs": "Void Logs",
+            "account_register": "Account Registration",
+            "settings": "Settings"
+          };
+          return linkMapping[item.to.replace("/", "")] === access.drawerLink;
+        });
+        return matchingAccessRight && matchingAccessRight.accessRights.read;
+      });
+    }
+  },
+  methods: {
+    logout() {
+      this.$store.commit("logout");
+    }
+  }
 };
 </script>

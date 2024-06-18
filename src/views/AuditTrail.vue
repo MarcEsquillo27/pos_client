@@ -208,9 +208,12 @@
 <script>
 import axios from "axios";
 import moment from "moment";
+import secret_key from "../plugins/md5decrypt";
+
 export default {
   data: () => {
     return {
+      apiUrl: process.env.VUE_APP_API_URL,
       startDate:moment().subtract(1,"month").format("YYYY-MM-DD"),
       endDate:moment().format("YYYY-MM-DD"),
       startdateMenu: false,
@@ -250,7 +253,11 @@ export default {
  
   methods: {
     filterLog(){
-      axios.get(`https://pos-server-ktwz.vercel.app/audit/api/getLogs/${this.startDate}/${this.endDate}`).then((res) => {
+      axios.get(`${this.apiUrl}/audit/api/getLogs/${this.startDate}/${this.endDate}`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
         this.all_products = res.data;
         // console.log(res.data);
       });
@@ -287,7 +294,11 @@ export default {
       this.insertItem = {};
     },
     getAllProducts() {
-      axios.get(`https://pos-server-ktwz.vercel.app/audit/api/getLogs/${this.startDate}/${this.endDate}`).then((res) => {
+      axios.get(`${this.apiUrl}/audit/api/getLogs/${this.startDate}/${this.endDate}`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
         this.all_products = res.data;
         // console.log(res.data);
       });
@@ -295,7 +306,11 @@ export default {
     updateInventory(val) {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       axios
-        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventory", val)
+        .post(`${this.apiUrl}/inventory/api/updateInventory`, val,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
         .then((res) => {
           console.log(res.data);
           // this.all_products.push(this.insertItem);
@@ -319,7 +334,11 @@ export default {
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       axios
-        .post("https://pos-server-ktwz.vercel.app/inventory/api/addInventory", add_data)
+        .post(`${this.apiUrl}/inventory/api/addInventory`, add_data,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
         .then((res) => {
           console.log(res.data);
           this.all_products.push(this.insertItem);

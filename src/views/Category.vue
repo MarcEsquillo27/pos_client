@@ -7,7 +7,7 @@
           <v-text-field outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="12" sm="6" class="text-right">
-          <v-btn @click="openDialog()" rounded color="primary" dense>Add Item</v-btn>
+          <v-btn :style="hasAccess('Category','add')?'':'display:none;'" @click="openDialog()" rounded color="primary" dense>Add Item</v-btn>
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
         </v-col>
       </v-row>
@@ -40,7 +40,7 @@
                 <td>{{ items.description }}</td>
                 <td>{{ formatdate(items.date) }}</td>
                 <td>
-                  <v-icon color="primary" @click="editInventory(items)"
+                  <v-icon :style="hasAccess('Category','edit')?'':'display:none;'" color="primary" @click="editInventory(items)"
                     >mdi-pencil</v-icon
                   >
                 </td>
@@ -117,9 +117,12 @@ import axios from "axios";
 import moment from "moment";
 import _ from "lodash";
 import Swal from "sweetalert2";
+import secret_key from "../plugins/md5decrypt";
+
 export default {
   data: () => {
     return {
+      apiUrl: process.env.VUE_APP_API_URL,
       currentPage: 1, // Current page number
       itemsPerPage: 5, // Number of items per page
       addButton: false,
@@ -172,7 +175,11 @@ export default {
       this.currentPage = page;
     },
     checkSameBarcode(val) {
-      axios.get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`).then((res) => {
+      axios.get(`${this.apiUrl}/inventory/api/getPerItem/${val}`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
         if (res.data.length) {
           Swal.fire({
             title: "Product Code Exist!",
@@ -249,14 +256,22 @@ export default {
       this.insertItem = {};
     },
     getAllProducts() {
-      axios.get("https://pos-server-ktwz.vercel.app/category/api/getCategory").then((res) => {
+      axios.get(`${this.apiUrl}/category/api/getCategory`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
         this.all_products = res.data;
       });
     },
     updateInventory(val) {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       axios
-        .post("https://pos-server-ktwz.vercel.app/category/api/updateCategory", val)
+        .post(`${this.apiUrl}/category/api/updateCategory`, val,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
@@ -269,7 +284,11 @@ export default {
             drawer_link: `Category`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
         })
         .catch((err) => {
           alert(err);
@@ -287,7 +306,11 @@ export default {
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       axios
-        .post("https://pos-server-ktwz.vercel.app/category/api/addCategory", add_data)
+        .post(`${this.apiUrl}/category/api/addCategory`, add_data,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("NEW ITEM ADDED");
@@ -301,7 +324,11 @@ export default {
             drawer_link: `Category`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
         })
         .catch((err) => {
           alert(err);

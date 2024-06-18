@@ -7,7 +7,7 @@
           <v-text-field outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="12" sm="6" class="text-right">
-          <v-btn @click="openDialog()" rounded color="primary" dense
+          <v-btn :style="hasAccess('Discount','add')?'':'display:none;'" @click="openDialog()" rounded color="primary" dense
             >Add Item Discount</v-btn
           >
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
@@ -96,12 +96,14 @@ import axios from "axios";
 import moment from "moment";
 import Swal from "sweetalert2";
 import ItemLisDiscountDialog from "../components/ItemLisDiscountDialog.vue"
+import secret_key from "../plugins/md5decrypt";
 export default {
    components: {
         ItemLisDiscountDialog
     },
   data: () => {
     return {
+      apiUrl: process.env.VUE_APP_API_URL,
       menu2: false,
       date2: moment().format("YYYY-MM-DD"),
       addButton: false,
@@ -154,7 +156,11 @@ export default {
       this.insertItem = {};
     },
     getAllProductsDiscounted() {
-      axios.get("https://pos-server-ktwz.vercel.app/discount/api/getDiscountItem").then((res) => {
+      axios.get(`${this.apiUrl}/discount/api/getDiscountItem`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
         console.log(res.data)
         // this.list_of_products = [];
         this.list_of_discount_items = res.data.filter((rec)=>{
@@ -166,7 +172,11 @@ export default {
       });
     },
     getAllProducts() {
-      axios.get("https://pos-server-ktwz.vercel.app/discount/api/getDiscount").then((res) => {
+      axios.get(`${this.apiUrl}/discount/api/getDiscount`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
         this.all_products = res.data;
         this.list_of_products = res.data;
       });
@@ -174,7 +184,11 @@ export default {
     updateInventory(val) {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       axios
-        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventory", val)
+        .post(`${this.apiUrl}/inventory/api/updateInventory`, val,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
         .then(() => {
           // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
@@ -187,7 +201,11 @@ export default {
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
         })
         .catch((err) => {
           alert(err);
@@ -196,7 +214,11 @@ export default {
     insertDiscount() {
       let add_data = this.insertItem;
       axios
-        .post("https://pos-server-ktwz.vercel.app/discount/api/addDiscount", add_data)
+        .post(`${this.apiUrl}/discount/api/addDiscount`, add_data,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
         .then(() => {
           this.all_products.push(this.insertItem);
           Swal.fire({
@@ -214,7 +236,11 @@ export default {
             drawer_link: `Discount`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs);
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
         })
         .catch((err) => {
           alert(err);

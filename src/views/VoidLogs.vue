@@ -164,10 +164,14 @@
   import Excel from "exceljs";
   import { saveAs } from "file-saver";
   import moment from "moment";
+  import secret_key from "../plugins/md5decrypt";
+
   // import _ from "lodash"
   export default {
     data: () => {
       return {
+        apiUrl: process.env.VUE_APP_API_URL,
+
         sales_extracted:[],
         editModeReturn: false,
         return_dialog: false,
@@ -203,7 +207,11 @@
         this.getAllProducts()
       },
       extractionData() {
-    axios.get(`https://pos-server-ktwz.vercel.app/sales/api/getSalesExtraction/${this.first_date}/${this.second_date}`)
+    axios.get(`${this.apiUrl}/sales/api/getSalesExtraction/${this.first_date}/${this.second_date}`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
       .then((response) => {
         const sales_extracted = response.data;
         return this.firstProcess(sales_extracted);
@@ -265,7 +273,11 @@
   },
   
       getAllProducts() {
-        axios.get(`https://pos-server-ktwz.vercel.app/void/api/getVoid/${this.first_date}/${this.second_date}`).then((res) => {
+        axios.get(`${this.apiUrl}/void/api/getVoid/${this.first_date}/${this.second_date}`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
           console.log(res.data);
           this.all_products = res.data
         });
@@ -284,14 +296,26 @@
        let updatedTotal =  this.saled_items.reduce((acc, product) => acc + product.total, 0);
         let index = this.all_products.findIndex(product => product.salesID === item.salesID)
         this.all_products[index].total_sum = updatedTotal
-        axios.post('https://pos-server-ktwz.vercel.app/sales/api/updateSales',item)
-        axios.post('https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStock',item)
+        axios.post(`${this.apiUrl}/sales/api/updateSales`,item,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
+        axios.post(`${this.apiUrl}/sales/api/updateInventoryStock`,item,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
           // .then((res)=>{
   
           // })
       },
       returnItems(val) {
-        axios.get(`https://pos-server-ktwz.vercel.app/sales/api/getbySalesId/${val.salesID}`).then((res) => {
+        axios.get(`${this.apiUrl}/sales/api/getbySalesId/${val.salesID}`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
           this.saled_items = [];
         this.return_dialog = true;
         let arr_product = res.data;

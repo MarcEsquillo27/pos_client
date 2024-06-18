@@ -7,7 +7,7 @@
           <v-text-field outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="6" sm="3" class="text-right">
-          <v-btn @click="openDialog()" rounded color="primary" dense>Add Item</v-btn>
+          <v-btn :style="hasAccess('Inventories','add')?'':'display:none;'" @click="openDialog()" rounded color="primary" dense>Add Item</v-btn>
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
         </v-col>
         <v-col cols="6" sm="3">
@@ -99,7 +99,7 @@
                 <td>&#8369; {{ totalPrice(items) }}</td>
 
                 <td>
-                  <v-icon color="primary" @click="editInventory(items)"
+                  <v-icon :style="hasAccess('Inventories','edit')?'':'display:none;'" color="primary" @click="editInventory(items)"
                     >mdi-pencil</v-icon
                   >
                 </td>
@@ -253,7 +253,7 @@ import secret_key from "../plugins/md5decrypt";
 export default {
   data: () => {
     return {
-      apiUrl: process.env.VUE_APP_API_URL,
+      // apiUrl: process.env.VUE_APP_API_URL,
       search: "",
       dialog: false,
       dialogDelete: false,
@@ -424,7 +424,7 @@ export default {
     },
 
     checkSameBarcode(val) {
-      axios.get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`,{ headers: {
+      axios.get(`${this.apiUrl}/inventory/api/getPerItem/${val}`,{ headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },}).then((res) => {
         if (res.data.length) {
@@ -504,7 +504,7 @@ export default {
     },
     fetchProducts() {
       axios
-        .get(`https://pos-server-ktwz.vercel.app/inventory/api/getInventory`, {
+        .get(`${this.apiUrl}/inventory/api/getInventory`, {
           params: {
             page: this.currentPage,
             page_size: this.itemsPerPage,
@@ -522,7 +522,7 @@ export default {
     updateInventory(val) {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       axios
-        .post(`https://pos-server-ktwz.vercel.app/inventory/api/updateInventory`, val,{ headers: {
+        .post(`${this.apiUrl}/inventory/api/updateInventory`, val,{ headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },})
         .then(() => {
@@ -537,7 +537,7 @@ export default {
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post(`https://pos-server-ktwz.vercel.app/inventory/audit/api/addLogs`, audit_logs,{ headers: {
+          axios.post(`${this.apiUrl}/inventory/audit/api/addLogs`, audit_logs,{ headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },});
         })
@@ -557,7 +557,7 @@ export default {
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       axios
-        .post(`https://pos-server-ktwz.vercel.app/inventory/api/addInventory`, add_data,{ headers: {
+        .post(`${this.apiUrl}/inventory/api/addInventory`, add_data,{ headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },})
         .then(() => {
@@ -573,7 +573,7 @@ export default {
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post(`https://pos-server-ktwz.vercel.app/audit/api/addLogs`, audit_logs,{ headers: {
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{ headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },});
         })
@@ -582,7 +582,7 @@ export default {
         });
     },
     getAllCategories() {
-      axios.get(`https://pos-server-ktwz.vercel.app/category/api/getCategory`,{ headers: {
+      axios.get(`${this.apiUrl}/category/api/getCategory`,{ headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },}).then((res) => {
         this.list_of_category = res.data;
@@ -593,7 +593,6 @@ export default {
     this.fetchProducts();
     this.getAllCategories();
     this.authorization = secret_key(this.$store.state.storedEmp.token);
-
   },
 };
 </script>

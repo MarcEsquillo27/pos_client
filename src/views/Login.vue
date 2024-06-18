@@ -61,11 +61,9 @@ export default {
     login() {
       axios
         .get(
-          `https://pos-server-ktwz.vercel.app/account/api/getPerAccount/${this.username}/${this.password}`
+          `${this.apiUrl}/login/api/getPerAccount/${this.username}/${this.password}`
         )
         .then((res) => {
-          console.log(res.data);
-
           if (res.data.userdetails.length) {
             res.data.token = cryptoJS.AES.encrypt(
               res.data.token,

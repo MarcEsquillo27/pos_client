@@ -135,9 +135,11 @@
 <script>
 import axios from "axios";
 import Swal from "sweetalert2";
+import secret_key from "../plugins/md5decrypt";
 export default {
   data: () => {
     return {
+      apiUrl: process.env.VUE_APP_API_URL,
       total:null,
       toExchange:true,
       remaining_stock:null,
@@ -181,8 +183,16 @@ export default {
       this.toUpdate.stock = this.toUpdate.stock + stock_toAdd
       this.toUpdate.quantity = this.quantity
       this.toUpdate.total = this.toUpdate.salesPrice * this.quantity
-      axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateSales",  this.toUpdate);
-      axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStock", this.toUpdate);
+      axios.post(`${this.apiUrl}/sales/api/updateSales`,  this.toUpdate,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
+      axios.post(`${this.apiUrl}/sales/api/updateInventoryStock`, this.toUpdate,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
       Swal.fire({
   title: "Item Changed",
   icon: "success",
@@ -194,11 +204,23 @@ export default {
       this.toUpdate.quantity = this.quantity
       this.toUpdate.total = this.toUpdate.salesPrice * this.quantity
       this.toUpdate.stock = this.toUpdate.stock - this.quantity
-     await axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateSales",  this.toUpdate);
-     await axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStock", this.toUpdate);
+     await axios.post(`${this.apiUrl}/sales/api/updateSales`,  this.toUpdate,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
+     await axios.post(`${this.apiUrl}/sales/api/updateInventoryStock`, this.toUpdate,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
 // console.log(this.toOldItem)
       this.toOldItem[0].stock = this.toOldItem[0].stock + this.toOldItem[0].quantity
-     await axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStockReturn", this.toOldItem[0]);
+     await axios.post(`${this.apiUrl}/sales/api/updateInventoryStockReturn`, this.toOldItem[0],{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
       Swal.fire({
   title: "Item Changed",
   icon: "success",
@@ -211,7 +233,11 @@ export default {
     },
     getItemDetails(val){
       this.toExchange = false
-      axios.get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`).then((res)=>{
+      axios.get(`${this.apiUrl}/inventory/api/getPerItem/${val}`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res)=>{
         for (let i = 0; i < res.data.length; i++) {
           const element = res.data[i];
           this.toUpdate.stock = element.stock
@@ -231,7 +257,11 @@ export default {
       this.total = this.toUpdate.salesPrice * this.toUpdate.quantity
     },
     getAllItems() {
-      axios.get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory").then((res) => {
+      axios.get(`${this.apiUrl}/inventory/api/getAllInvetory`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
         this.list_of_products = res.data.filter((rec)=>{
           if(rec.stock > 0){
             return rec
@@ -244,7 +274,11 @@ export default {
       this.exchange_dialog = true;
     },
     getAllProducts() {
-      axios.get("https://pos-server-ktwz.vercel.app/sales/api/getAllSales").then((res) => {
+      axios.get(`${this.apiUrl}/sales/api/getAllSales`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
         console.log(res.data);
         this.all_products = res.data;
       });
@@ -267,8 +301,16 @@ export default {
         (product) => product.salesID === item.salesID
       );
       this.all_products[index].total_sum = updatedTotal;
-      axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateSales", item);
-      axios.post("https://pos-server-ktwz.vercel.app/sales/api/updateInventoryStock", item);
+      axios.post(`${this.apiUrl}/sales/api/updateSales`, item,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
+      axios.post(`${this.apiUrl}/sales/api/updateInventoryStock`, item,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      });
       // .then((res)=>{
 
       // })
@@ -277,7 +319,11 @@ export default {
       console.log(val)
       this.toUpdate.salesID = val.salesID
       axios
-        .get(`https://pos-server-ktwz.vercel.app/sales/api/getbySalesId/${val.salesID}`)
+        .get(`${this.apiUrl}/sales/api/getbySalesId/${val.salesID}`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
         .then((res) => {
           this.saled_items = [];
           this.return_dialog = true;

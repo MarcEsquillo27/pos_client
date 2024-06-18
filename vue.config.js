@@ -26,6 +26,14 @@ module.exports = defineConfig({
     },
   },
   devServer: {
-    proxy: process.env.VUE_APP_API_URL,
+    proxy: {
+      // Proxy all requests starting with /api to your API URL
+      '/api': {
+        target: process.env.VUE_APP_API_URL,
+        changeOrigin: true,
+        secure: false, // If your API is HTTP, set this to false
+        // pathRewrite: { '^/api': '' } // Uncomment this line if your API does not have a /api prefix
+      },
+    },
   },
 });

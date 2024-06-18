@@ -7,9 +7,11 @@
 <script>
 import axios from "axios";
 import moment from 'moment';
+import secret_key from "../plugins/md5decrypt";
 export default {
    data: () => {
     return {
+    apiUrl: process.env.VUE_APP_API_URL,
     for_delivery:false,
     discounted:false,
     products_code:"",
@@ -129,7 +131,11 @@ export default {
     //ALL GET DATA
     getProducts(val) {
       if(val){
-    axios.get(`https://pos-server-ktwz.vercel.app/inventory/api/getPerItem/${val}`)
+    axios.get(`${this.apiUrl}/inventory/api/getPerItem/${val}`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
     .then((res) => {
       console.log(res.data)
         let result_product = res.data[0];
@@ -170,10 +176,18 @@ export default {
       },
       purchase(){
         console.log(this.products)
-        axios.post('https://pos-server-ktwz.vercel.app/inventory/api/updateInventoryStock',this.products)
+        axios.post(`${this.apiUrl}/inventory/api/updateInventoryStock`,this.products,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
         .then((res)=>{
         console.log(res.data)
-        axios.post('https://pos-server-ktwz.vercel.app/sales/api/addSales',this.products).then((res)=>{
+        axios.post(`${this.apiUrl}/sales/api/addSales`,this.products,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res)=>{
           console.log(res.data)
         }).then(()=>{
               for (let i = 0; i < this.products.length; i++) {
@@ -186,7 +200,11 @@ export default {
                 drawer_link:`POS`,
                 date:moment().format("YYYY-MM-DD hh:mm:ss"),
               }
-                     axios.post('https://pos-server-ktwz.vercel.app/audit/api/addLogs',audit_logs).then((res)=>{
+                     axios.post('${this.apiUrl}/audit/api/addLogs',audit_logs,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res)=>{
           console.log(res.data)
         })
               }
@@ -222,7 +240,11 @@ const printContents = document.getElementById('my-card').innerHTML;
         }
       },
       getAllProducts(){
-          axios.get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory").then((res)=>{
+          axios.get(`${this.apiUrl}/inventory/api/getAllInvetory`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res)=>{
       this.list_of_products = res.data
     }).catch((err)=>{
       alert(err.message )

@@ -5,7 +5,7 @@
           <v-text-field outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="12" sm="6" class="text-right">
-          <v-btn @click="addDialog()" rounded color="primary" dense
+          <v-btn :style="hasAccess('Discount','add')?'':'display:none;'" @click="addDialog()" rounded color="primary" dense
             >Add Item</v-btn
           >
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
@@ -42,7 +42,7 @@
                   </td>
                   <td>{{ items.discount_value }}%</td>
                   <td>
-                    <v-icon color="error" @click="removeDiscount(items)"
+                    <v-icon :style="hasAccess('Discount','delete')?'':'display:none;'" color="error" @click="removeDiscount(items)"
                       >mdi-delete</v-icon
                     >
                   </td>
@@ -63,6 +63,7 @@ import ItemDiscountDialog from "../components/ItemDiscountDialog.vue";
 import axios from "axios"
 import moment from "moment";
 import Swal from "sweetalert2";
+import secret_key from "../plugins/md5decrypt";
 export default {
   props: {
     list_of_discount_items: {
@@ -78,6 +79,7 @@ export default {
     },
   data: () => {
     return {
+    apiUrl: process.env.VUE_APP_API_URL,
     add_dialog_item:false,
     insert_item:false,
     // list_of_products:[],
@@ -102,7 +104,11 @@ export default {
         item:val.item
       }
  axios
-        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventory", toUpdate)
+        .post(`${this.apiUrl}/inventory/api/updateInventory`, toUpdate,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
         .then(() => {
           // this.all_products.push(this.insertItem);
           Swal.fire({
@@ -119,7 +125,11 @@ export default {
             drawer_link: `Discount`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs).then(()=>{
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then(()=>{
             location.reload()
           });
         })

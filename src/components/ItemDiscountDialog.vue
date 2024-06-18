@@ -89,11 +89,14 @@
 import axios from "axios"
 import moment from "moment"
 import Swal from "sweetalert2";
+import secret_key from "../plugins/md5decrypt";
+
 export default {
     props:["insert_item","discount_price"],
  data: () => {
     return {
       menu2: false,
+      apiUrl: process.env.VUE_APP_API_URL,
       products_code:"",
       date2: moment().format("YYYY-MM-DD"),
       addButton: false,
@@ -128,7 +131,11 @@ export default {
   },
   methods:{
      getAllProducts() {
-      axios.get("https://pos-server-ktwz.vercel.app/inventory/api/getInventory").then((res) => {
+      axios.get(`${this.apiUrl}/inventory/api/getAllInvetory`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then((res) => {
         this.list_of_products = res.data;
         console.log(res.data)
       });
@@ -136,7 +143,11 @@ export default {
     insertInventory(val){
         val.discount_id = this.discount_price
  axios
-        .post("https://pos-server-ktwz.vercel.app/inventory/api/updateInventory", val)
+        .post(`${this.apiUrl}/inventory/api/updateInventory`, val,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      })
         .then(() => {
           // this.all_products.push(this.insertItem);
           Swal.fire({
@@ -153,7 +164,11 @@ export default {
             drawer_link: `Discount`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post("https://pos-server-ktwz.vercel.app/audit/api/addLogs", audit_logs).then(()=>{
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
+        headers: {
+            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+      }).then(()=>{
             location.reload()
           });
         })
