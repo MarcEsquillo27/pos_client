@@ -46,6 +46,8 @@
 <script>
 import axios from "axios";
 import cryptoJS from "crypto-js";
+import router from "@/router";
+
 export default {
   name: "Login",
   data() {
@@ -54,15 +56,12 @@ export default {
 
       username: "",
       password: "",
-      
     };
   },
   methods: {
     login() {
       axios
-        .get(
-          `${this.apiUrl}/login/api/getPerAccount/${this.username}/${this.password}`
-        )
+        .get(`${this.apiUrl}/login/api/getPerAccount/${this.username}/${this.password}`)
         .then((res) => {
           if (res.data.userdetails.length) {
             res.data.token = cryptoJS.AES.encrypt(
@@ -72,21 +71,23 @@ export default {
 
             this.$store.commit("STORE_EMP", res.data);
 
-            // Check if the current route is not already '/pos' before navigating
-            if (this.$route.path !== "/pos") {
-              this.$router.push("/pos");
+            if (this.$store.state.storedEmp.token) {
+              if (this.$route.name !== "pos") {
+                router.push({ name: "pos" }); // Redirect to '/pos' route if user is authenticated and not already on '/pos'
+              }
+            } else {
+              alert("Something went wrong, please try again and make sure to login.");
             }
           } else {
-            alert("Something went wrong please try again");
+            alert("Something went wrong, please try again");
           }
         });
-
-      // axios.get(`/api/getPerAccount/${
     },
   },
-  mounted(){
-    console.log(this.apiUrl,"90")
-  }
+
+  mounted() {
+    console.log(this.apiUrl, "90");
+  },
 };
 </script>
 <style scoped>

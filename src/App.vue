@@ -29,7 +29,7 @@
       dark
     >
       <v-app-bar-nav-icon @click="navDrawer = !navDrawer"></v-app-bar-nav-icon>
-      <!-- {{ access }} -->
+      {{ store_name }}
     </v-app-bar>
 
     <v-main>
@@ -39,12 +39,17 @@
 </template>
 
 <script>
+import router from "@/router";
 export default {
   name: "App",
   data: () => ({
     navDrawer: false,
     navList: [
-      { title: "Dashboard", icon: "mdi-view-dashboard-variant-outline", to: "/dashboard" },
+      {
+        title: "Dashboard",
+        icon: "mdi-view-dashboard-variant-outline",
+        to: "/dashboard",
+      },
       { title: "Point of Sale", icon: "mdi-point-of-sale", to: "/pos" },
       { title: "Inventories", icon: "mdi-format-list-checks", to: "/inventories" },
       { title: "Discount", icon: "mdi-sale", to: "/discount" },
@@ -59,30 +64,41 @@ export default {
   }),
   computed: {
     filteredNavList() {
-      return this.navList.filter(item => {
-        const matchingAccessRight = this.access.find(access => {
-          const linkMapping = {
-            "pos": "POS",
-            "inventories": "Inventories",
-            "discount": "Discount",
-            "return": "Return and Exchange",
-            "sales_report": "Sale Report",
-            "category": "Category",
-            "audit_trail": "Transaction Logs",
-            "void_logs": "Void Logs",
-            "account_register": "Account Registration",
-            "settings": "Settings"
-          };
-          return linkMapping[item.to.replace("/", "")] === access.drawerLink;
-        });
-        return matchingAccessRight && matchingAccessRight.accessRights.read;
-      });
-    }
+      let accesArray = null;
+
+      if (this.$store.state.storedEmp && this.$store.state.storedEmp.userdetails) {
+        accesArray = JSON.parse(this.$store.state.storedEmp.userdetails[0].access);
+      }
+
+      return accesArray
+        ? this.navList.filter((item) => {
+            const matchingAccessRight = accesArray.find((access) => {
+              const linkMapping = {
+                pos: "POS",
+                inventories: "Inventories",
+                discount: "Discount",
+                return: "Return and Exchange",
+                sales_report: "Sale Report",
+                category: "Category",
+                audit_trail: "Transaction Logs",
+                void_logs: "Void Logs",
+                account_register: "Account Registration",
+                settings: "Settings",
+              };
+              return linkMapping[item.to.replace("/", "")] === access.drawerLink;
+            });
+            return matchingAccessRight && matchingAccessRight.accessRights.read;
+          })
+        : [];
+    },
   },
   methods: {
     logout() {
-      this.$store.commit("logout");
-    }
-  }
+      // this.$store.commit("logout");
+      localStorage.clear(); // Clear all data in local storage
+      router.push({ name: "login" }); // Redirect to the login route
+      location.reload(); // Reload the page before logout
+    },
+  },
 };
 </script>

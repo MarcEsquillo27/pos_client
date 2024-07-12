@@ -1,12 +1,15 @@
 import { mapState, mapMutations } from 'vuex';
+import axios from "axios";
 
 const myPlugins = {
     install(Vue) {
         Vue.mixin({
             data() {
                 return {
-                    access: JSON.parse(this.$store.state.storedEmp.userdetails[0].access),
                     apiUrl: process.env.VUE_APP_API_URL,
+                    store_name:"",
+                    address:"",
+                    phone:"",
                     // name: this.$store.state.storedName.userdetails[0].name
                 };
             },
@@ -22,14 +25,26 @@ const myPlugins = {
                     'STORE_NAME'
                 ]),
                 hasAccess(drawerLink, accessRight) {
-                    const drawer = this.access.find(item => item.drawerLink === drawerLink);
+                    const drawer = JSON.parse(this.$store.state.storedEmp.userdetails[0].access).find(item => item.drawerLink === drawerLink);
                     if (!drawer) {
                         return false; // Return false if the drawerLink is not found
                     }
                     // Check if the specified accessRight is true
                     return drawer.accessRights[accessRight] === true;
-                }
-            }
+                },
+                getStore() {
+                    axios
+                      .get(`${this.apiUrl}/storename/api/getStore`)
+                      .then((res) => {
+                        this.store_name = res.data[0].store_name;
+                        this.address = res.data[0].address;
+                        this.phone_number = res.data[0].phone_number;
+                      });
+                  },
+            },
+            mounted() {
+                this.getStore();
+            },
         });
     }
 };

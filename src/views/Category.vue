@@ -7,11 +7,18 @@
           <v-text-field outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="12" sm="6" class="text-right">
-          <v-btn :style="hasAccess('Category','add')?'':'display:none;'" @click="openDialog()" rounded color="primary" dense>Add Item</v-btn>
+          <v-btn
+            :style="hasAccess('Category', 'add') ? '' : 'display:none;'"
+            @click="openDialog()"
+            rounded
+            color="primary"
+            dense
+            >Add Item</v-btn
+          >
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
         </v-col>
       </v-row>
-      
+
       <v-row>
         <v-col cols="12">
           <v-simple-table class="border">
@@ -35,12 +42,14 @@
                 v-for="(items, index) in paginatedItems"
                 :key="index"
               >
-                <td>{{ items.categoryID }}</td>
                 <td>{{ items.categoryName }}</td>
                 <td>{{ items.description }}</td>
                 <td>{{ formatdate(items.date) }}</td>
                 <td>
-                  <v-icon :style="hasAccess('Category','edit')?'':'display:none;'" color="primary" @click="editInventory(items)"
+                  <v-icon
+                    :style="hasAccess('Category', 'edit') ? '' : 'display:none;'"
+                    color="primary"
+                    @click="editInventory(items)"
                     >mdi-pencil</v-icon
                   >
                 </td>
@@ -49,9 +58,14 @@
           </v-simple-table>
         </v-col>
       </v-row>
-      <v-row><v-col>
-        <v-pagination v-model="currentPage" :length="numPages" @input="changePage" />
-      </v-col></v-row>
+      <v-row
+        ><v-col>
+          <v-pagination
+            v-model="currentPage"
+            :length="numPages"
+            @input="changePage"
+          /> </v-col
+      ></v-row>
       <v-dialog v-model="add_dialog" width="40%">
         <v-card>
           <v-card-title> Add Category </v-card-title>
@@ -77,7 +91,7 @@
               outlined
               dense
             ></v-text-field>
-         
+
             <v-btn
               class="mt-1"
               :style="!addButton ? 'display:none;' : ''"
@@ -140,7 +154,6 @@ export default {
       menu: false,
       date: "",
       headers: [
-        { text: "Category ID", value: "categoryID" },
         { text: "Name", value: "categoryName" },
         { text: "Description", value: "description" },
         { text: "Date ", value: "Date" },
@@ -168,28 +181,30 @@ export default {
     },
   },
   methods: {
-    formatdate(val){
-      return moment(val).format("YYYY-MM-DD hh:mm:ss")
+    formatdate(val) {
+      return moment(val).format("YYYY-MM-DD hh:mm:ss");
     },
     changePage(page) {
       this.currentPage = page;
     },
     checkSameBarcode(val) {
-      axios.get(`${this.apiUrl}/inventory/api/getPerItem/${val}`,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+      axios
+        .get(`${this.apiUrl}/inventory/api/getPerItem/${val}`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      }).then((res) => {
-        if (res.data.length) {
-          Swal.fire({
-            title: "Product Code Exist!",
-            text: "Change product code to avoid multiple code",
-            icon: "error",
-          });
-          this.insertItem.productNumber = "";
-          return false;
-        }
-      });
+        })
+        .then((res) => {
+          if (res.data.length) {
+            Swal.fire({
+              title: "Product Code Exist!",
+              text: "Change product code to avoid multiple code",
+              icon: "error",
+            });
+            this.insertItem.productNumber = "";
+            return false;
+          }
+        });
     },
     toggleLowStockFilter() {
       this.low_products = !this.low_products;
@@ -256,22 +271,24 @@ export default {
       this.insertItem = {};
     },
     getAllProducts() {
-      axios.get(`${this.apiUrl}/category/api/getCategory`,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+      axios
+        .get(`${this.apiUrl}/category/api/getCategory`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      }).then((res) => {
-        this.all_products = res.data;
-      });
+        })
+        .then((res) => {
+          this.all_products = res.data;
+        });
     },
     updateInventory(val) {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       axios
-        .post(`${this.apiUrl}/category/api/updateCategory`, val,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+        .post(`${this.apiUrl}/category/api/updateCategory`, val, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      })
+        })
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
@@ -284,11 +301,11 @@ export default {
             drawer_link: `Category`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      });
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
+            headers: {
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            },
+          });
         })
         .catch((err) => {
           alert(err);
@@ -306,11 +323,11 @@ export default {
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       axios
-        .post(`${this.apiUrl}/category/api/addCategory`, add_data,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+        .post(`${this.apiUrl}/category/api/addCategory`, add_data, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      })
+        })
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("NEW ITEM ADDED");
@@ -324,11 +341,11 @@ export default {
             drawer_link: `Category`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      });
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
+            headers: {
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            },
+          });
         })
         .catch((err) => {
           alert(err);

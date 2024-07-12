@@ -7,7 +7,14 @@
           <v-text-field outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="6" sm="3" class="text-right">
-          <v-btn :style="hasAccess('Inventories','add')?'':'display:none;'" @click="openDialog()" rounded color="primary" dense>Add Item</v-btn>
+          <v-btn
+            :style="hasAccess('Inventories', 'add') ? '' : 'display:none;'"
+            @click="openDialog()"
+            rounded
+            color="primary"
+            dense
+            >Add Item</v-btn
+          >
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
         </v-col>
         <v-col cols="6" sm="3">
@@ -99,7 +106,10 @@
                 <td>&#8369; {{ totalPrice(items) }}</td>
 
                 <td>
-                  <v-icon :style="hasAccess('Inventories','edit')?'':'display:none;'" color="primary" @click="editInventory(items)"
+                  <v-icon
+                    :style="hasAccess('Inventories', 'edit') ? '' : 'display:none;'"
+                    color="primary"
+                    @click="editInventory(items)"
                     >mdi-pencil</v-icon
                   >
                 </td>
@@ -424,19 +434,23 @@ export default {
     },
 
     checkSameBarcode(val) {
-      axios.get(`${this.apiUrl}/inventory/api/getPerItem/${val}`,{ headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },}).then((res) => {
-        if (res.data.length) {
-          Swal.fire({
-            title: "Product Code Exist!",
-            text: "Change product code to avoid multiple code",
-            icon: "error",
-          });
-          this.insertItem.productNumber = "";
-          return false;
-        }
-      });
+      axios
+        .get(`${this.apiUrl}/inventory/api/getPerItem/${val}`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+        })
+        .then((res) => {
+          if (res.data.length) {
+            Swal.fire({
+              title: "Product Code Exist!",
+              text: "Change product code to avoid multiple code",
+              icon: "error",
+            });
+            this.insertItem.productNumber = "";
+            return false;
+          }
+        });
     },
     toggleLowStockFilter() {
       this.low_products = !this.low_products;
@@ -508,8 +522,9 @@ export default {
           params: {
             page: this.currentPage,
             page_size: this.itemsPerPage,
-          }, headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
         })
         .then((res) => {
@@ -522,9 +537,11 @@ export default {
     updateInventory(val) {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       axios
-        .post(`${this.apiUrl}/inventory/api/updateInventory`, val,{ headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },})
+        .post(`${this.apiUrl}/inventory/api/updateInventory`, val, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+        })
         .then(() => {
           // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
@@ -537,9 +554,11 @@ export default {
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post(`${this.apiUrl}/inventory/audit/api/addLogs`, audit_logs,{ headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },});
+          axios.post(`${this.apiUrl}/inventory/audit/api/addLogs`, audit_logs, {
+            headers: {
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            },
+          });
         })
         .catch((err) => {
           alert(err);
@@ -557,9 +576,11 @@ export default {
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       axios
-        .post(`${this.apiUrl}/inventory/api/addInventory`, add_data,{ headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },})
+        .post(`${this.apiUrl}/inventory/api/addInventory`, add_data, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+        })
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("NEW ITEM ADDED");
@@ -573,20 +594,26 @@ export default {
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{ headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },});
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
+            headers: {
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            },
+          });
         })
         .catch((err) => {
           alert(err);
         });
     },
     getAllCategories() {
-      axios.get(`${this.apiUrl}/category/api/getCategory`,{ headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },}).then((res) => {
-        this.list_of_category = res.data;
-      });
+      axios
+        .get(`${this.apiUrl}/category/api/getCategory`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+        })
+        .then((res) => {
+          this.list_of_category = res.data;
+        });
     },
   },
   mounted() {

@@ -357,11 +357,11 @@
           <div id="receipt-card" style="width: 100%">
             <div class="printable">
               <p style="text-align: center">
-                <!-- <b>{{ this.$store.state.storeName.name }}</b> -->
+                <b>{{ store_name }}</b>
               </p>
               <p style="text-align: center">Receipt No: {{ salesInvoice }}</p>
               <p style="text-align: center">
-                <!-- Cashier Name: {{ this.$store.state.storedEmp[0].name }} -->
+                Cashier Name: {{ this.$store.state.storedEmp.userdetails[0].fullname }}
               </p>
               <hr />
               <ul style="width: 100%; padding: 0">
@@ -564,6 +564,14 @@
                       :items-per-page="5"
                       class="elevation-1"
                     ></v-data-table>
+                    <br />
+                    <v-btn
+                      @click="backTransaction(item, i)"
+                      style="float: right"
+                      small
+                      color="primary"
+                      >Add to POS</v-btn
+                    >
                   </v-expansion-panel-content>
                 </v-expansion-panel>
               </v-expansion-panels>
@@ -677,6 +685,11 @@ export default {
     },
   },
   methods: {
+    // backTransaction(val) {
+    //   console.log(val.children);
+    //   this.products = val.children;
+    //   this.pending_dialog = false;
+    // },
     generateBarcode() {
       console.log(this.salesInvoice, "668");
       if (this.salesInvoice) {
@@ -695,8 +708,8 @@ export default {
             page: this.currentPage,
             page_size: this.itemsPerPage,
           },
-           headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
         })
         .then((response) => {
@@ -720,6 +733,29 @@ export default {
           console.error("Error fetching products:", error);
         });
     },
+    fetchPending() {
+      axios
+        .get(`${this.apiUrl}/pending/api/getPending`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`,
+          },
+        })
+        .then((res) => {
+          const data = res.data;
+
+          // Parse the 'children' field
+          data.forEach((item) => {
+            item.children = JSON.parse(item.children);
+            item.expanded = item.expanded === 1 ? true : false;
+          });
+          this.list_of_pending = data;
+          // console.log({ ...data });
+          // this.list_of_pending.push({ ...data });
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+        });
+    },
     dateToday() {
       return moment().format("YYYY-MM-DD hh:mm:ss");
     },
@@ -727,6 +763,7 @@ export default {
       return (this.discounted_price -= (val.salesPrice * val.discount_value) / 100);
     },
     togglePanel(index) {
+      this.fetchPending();
       this.filteredPendingTransactions.forEach((item, i) => {
         if (i === index) {
           // Toggle the expanded state of the clicked panel
@@ -735,17 +772,21 @@ export default {
           // Collapse other panels
           item.expanded = false;
         }
-        console.log(item);
+        // console.log(item);
       });
     },
     backTransaction(val, index) {
-      console.log(val);
       let confirmation = confirm("Are you sure you want to continue the transaction?");
       if (confirmation) {
-        this.products = val;
+        this.products = val.children;
         this.total = this.products.reduce((acc, product) => acc + product.subtotal, 0);
-        this.pendingItemArr.splice(index, 1);
+        this.list_of_pending.splice(index, 1);
         this.pending_dialog = false;
+        axios.get(`${this.apiUrl}/pending/api/deletePending/${val.id}`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`,
+          },
+        });
         alert("Transaction Complete");
       }
     },
@@ -782,6 +823,11 @@ export default {
             })),
             expanded: false,
           };
+          axios.post(`${this.apiUrl}/pending/api/addPending`, item, {
+            headers: {
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            },
+          });
           this.list_of_pending.push(item);
 
           this.products = [];
@@ -790,6 +836,7 @@ export default {
           this.cash = 0;
           this.change = 0;
           Swal.fire("Saved!", "", "success");
+          console.log(this.list_of_pending);
         } else if (result.isDenied) {
           Swal.fire("Changes are not saved", "", "info");
         }
@@ -844,8 +891,8 @@ export default {
         axios
           .post(`${this.apiUrl}/void/api/addVoid`, void_items, {
             headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            },
           })
           .then(() => {
             let get_index = this.products.indexOf(item);
@@ -892,8 +939,8 @@ export default {
         axios
           .get(`${this.apiUrl}/inventory/api/getPerItem/${val}`, {
             headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            },
           })
           .then((res) => {
             let result_product = res.data[0];
@@ -962,24 +1009,27 @@ export default {
       this.cash_dialog = true;
     },
     purchase() {
+      console.log(this.products);
       axios
-        .post(
-          `${this.apiUrl}/inventory/api/updateInventoryStock`,
-          this.products,
-          {
-           headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+        .post(`${this.apiUrl}/inventory/api/updateInventoryStock`, this.products, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-          }
-        )
-        .then((res) => {
-          console.log(res.data);
+        })
+        .then(() => {
+          console.log(this.products, "1020");
           axios
-            .post(`${this.apiUrl}/sales/api/addSales`, this.products, {
-              headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-            })
+            .post(
+              `${this.apiUrl}/sales/api/addSales/${this.$store.state.storedEmp.userdetails[0].fullname}`,
+              this.products,
+              {
+                headers: {
+                  authorization: `Bearer ${secret_key(
+                    this.$store.state.storedEmp.token
+                  )}`, // Assuming Bearer token
+                },
+              }
+            )
             .then(() => {
               this.salesInvoice = moment().format("YYYYMMDDhhmmss");
             })
@@ -997,8 +1047,10 @@ export default {
                 axios
                   .post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
                     headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
+                      authorization: `Bearer ${secret_key(
+                        this.$store.state.storedEmp.token
+                      )}`, // Assuming Bearer token
+                    },
                   })
                   .then((res) => {
                     console.log(res.data);
@@ -1099,11 +1151,11 @@ export default {
       //       'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
       //     })
       // console.log(secret_key(this.$store.state.storedEmp.token))
-      // let token = 
+      // let token =
       axios
         .get(`${this.apiUrl}/category/api/getCategory`, {
           headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
         })
         .then((res) => {
@@ -1117,8 +1169,9 @@ export default {
   },
   mounted() {
     this.fetchProducts();
+    this.fetchPending();
     setTimeout(() => {
-      this.getAllCategories();  
+      this.getAllCategories();
     }, 1000);
     this.authorization = secret_key(this.$store.state.storedEmp.token);
     console.log(this.apiUrl);

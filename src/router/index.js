@@ -75,4 +75,20 @@ const router = new VueRouter({
   routes
 })
 
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token');
+
+  if (to.meta.requiresAuth && !token) {
+    // Redirect to login page for routes that require authentication when the user is not authenticated
+    next({ name: 'login' });
+  } else if (to.name === 'login' && token) {
+    // Redirect to '/pos' if user is authenticated and trying to access login page
+    next({ name: 'pos' });
+  } else {
+    // Allow navigation to the requested route
+    next();
+  }
+});
+
+
 export default router

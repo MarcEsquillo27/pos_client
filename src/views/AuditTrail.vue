@@ -8,59 +8,56 @@
         </v-col>
         <v-col>
           <v-menu
-        v-model="startdateMenu"
-        :close-on-content-click="false"
-        :nudge-right="40"
-        transition="scale-transition"
-        offset-y
-        min-width="auto"
-      >
-        <template v-slot:activator="{ on, attrs }">
-          <v-text-field
-            outlined
-            dense
-            rounded
-            v-model="startDate"
-            label="Start Date"
-            prepend-icon="mdi-calendar"
-            readonly
-            v-bind="attrs"
-            v-on="on"
-          ></v-text-field>
-        </template>
-        <v-date-picker
-          v-model="startDate"
-          @input="startdateMenu = false"
-        ></v-date-picker>
-      </v-menu>
+            v-model="startdateMenu"
+            :close-on-content-click="false"
+            :nudge-right="40"
+            transition="scale-transition"
+            offset-y
+            min-width="auto"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-text-field
+                outlined
+                dense
+                rounded
+                v-model="startDate"
+                label="Start Date"
+                prepend-icon="mdi-calendar"
+                readonly
+                v-bind="attrs"
+                v-on="on"
+              ></v-text-field>
+            </template>
+            <v-date-picker
+              v-model="startDate"
+              @input="startdateMenu = false"
+            ></v-date-picker>
+          </v-menu>
         </v-col>
         <v-col>
           <v-menu
-        v-model="enddateMenu"
-        :close-on-content-click="false"
-        :nudge-right="40"
-        transition="scale-transition"
-        offset-y
-        min-width="auto"
-      >
-        <template v-slot:activator="{ on, attrs }">
-          <v-text-field
-            outlined
-            dense
-            rounded
-            v-model="endDate"
-            label="End Date"
-            prepend-icon="mdi-calendar"
-            readonly
-            v-bind="attrs"
-            v-on="on"
-          ></v-text-field>
-        </template>
-        <v-date-picker
-          v-model="endDate"
-          @input="enddateMenu = false"
-        ></v-date-picker>
-      </v-menu>
+            v-model="enddateMenu"
+            :close-on-content-click="false"
+            :nudge-right="40"
+            transition="scale-transition"
+            offset-y
+            min-width="auto"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-text-field
+                outlined
+                dense
+                rounded
+                v-model="endDate"
+                label="End Date"
+                prepend-icon="mdi-calendar"
+                readonly
+                v-bind="attrs"
+                v-on="on"
+              ></v-text-field>
+            </template>
+            <v-date-picker v-model="endDate" @input="enddateMenu = false"></v-date-picker>
+          </v-menu>
         </v-col>
         <v-col>
           <v-btn color="primary" @click="filterLog()">Filter Date</v-btn>
@@ -86,13 +83,12 @@
                     v-for="(items, index) in paginatedItems"
                     :key="index"
                   >
-                    <td>{{ items.id }}</td>
                     <td>{{ items.action }}</td>
                     <td>{{ items.description }}</td>
                     <td>{{ items.product_number }}</td>
                     <td>{{ items.quantity }}</td>
                     <td>{{ items.drawerLink }}</td>
-                    <td>{{fixedDate(items.date )}}</td>
+                    <td>{{ fixedDate(items.date) }}</td>
                   </tr>
                 </tbody>
               </v-simple-table>
@@ -100,9 +96,14 @@
           </v-card>
         </v-col>
       </v-row>
-      <v-row><v-col>
-        <v-pagination v-model="currentPage" :length="numPages" @input="changePage" />
-      </v-col></v-row>
+      <v-row
+        ><v-col>
+          <v-pagination
+            v-model="currentPage"
+            :length="numPages"
+            @input="changePage"
+          /> </v-col
+      ></v-row>
       <v-dialog v-model="add_dialog" width="40%">
         <v-card>
           <v-card-title> Add Item </v-card-title>
@@ -214,10 +215,10 @@ export default {
   data: () => {
     return {
       apiUrl: process.env.VUE_APP_API_URL,
-      startDate:moment().subtract(1,"month").format("YYYY-MM-DD"),
-      endDate:moment().format("YYYY-MM-DD"),
+      startDate: moment().subtract(1, "month").format("YYYY-MM-DD"),
+      endDate: moment().format("YYYY-MM-DD"),
       startdateMenu: false,
-      enddateMenu:false,
+      enddateMenu: false,
       currentPage: 1, // Current page number
       itemsPerPage: 5,
       addButton: false,
@@ -232,7 +233,6 @@ export default {
       menu: false,
       date: "",
       headers: [
-        { text: "ID", value: "id" },
         { text: "Action ", value: "action" },
         { text: "Description ", value: "description" },
         { text: "Product Number ", value: "product_number" },
@@ -242,31 +242,35 @@ export default {
       ],
     };
   },
-  computed:{ paginatedItems() {
+  computed: {
+    paginatedItems() {
       const startIndex = (this.currentPage - 1) * this.itemsPerPage;
       const endIndex = startIndex + this.itemsPerPage;
       return this.all_products.slice(startIndex, endIndex);
     },
     numPages() {
       return Math.ceil(this.all_products.length / this.itemsPerPage);
-    },},
- 
+    },
+  },
+
   methods: {
-    filterLog(){
-      axios.get(`${this.apiUrl}/audit/api/getLogs/${this.startDate}/${this.endDate}`,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+    filterLog() {
+      axios
+        .get(`${this.apiUrl}/audit/api/getLogs/${this.startDate}/${this.endDate}`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      }).then((res) => {
-        this.all_products = res.data;
-        // console.log(res.data);
-      });
+        })
+        .then((res) => {
+          this.all_products = res.data;
+          // console.log(res.data);
+        });
     },
     changePage(page) {
       this.currentPage = page;
     },
-    fixedDate(val){
-      return moment(val).format("YYYY-MM-DD hh:mm:ss")
+    fixedDate(val) {
+      return moment(val).format("YYYY-MM-DD hh:mm:ss");
     },
     overallCapital(val) {
       var totalallCapital = null;
@@ -294,23 +298,25 @@ export default {
       this.insertItem = {};
     },
     getAllProducts() {
-      axios.get(`${this.apiUrl}/audit/api/getLogs/${this.startDate}/${this.endDate}`,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+      axios
+        .get(`${this.apiUrl}/audit/api/getLogs/${this.startDate}/${this.endDate}`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      }).then((res) => {
-        this.all_products = res.data;
-        // console.log(res.data);
-      });
+        })
+        .then((res) => {
+          this.all_products = res.data;
+          // console.log(res.data);
+        });
     },
     updateInventory(val) {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       axios
-        .post(`${this.apiUrl}/inventory/api/updateInventory`, val,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+        .post(`${this.apiUrl}/inventory/api/updateInventory`, val, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      })
+        })
         .then((res) => {
           console.log(res.data);
           // this.all_products.push(this.insertItem);
@@ -334,11 +340,11 @@ export default {
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       axios
-        .post(`${this.apiUrl}/inventory/api/addInventory`, add_data,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+        .post(`${this.apiUrl}/inventory/api/addInventory`, add_data, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      })
+        })
         .then((res) => {
           console.log(res.data);
           this.all_products.push(this.insertItem);

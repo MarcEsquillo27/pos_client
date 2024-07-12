@@ -7,7 +7,14 @@
           <v-text-field outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="12" sm="6" class="text-right">
-          <v-btn :style="hasAccess('Account Registration','add')?'':'display:none;'" @click="openDialog()" rounded color="primary" dense>Add Employee</v-btn>
+          <v-btn
+            :style="hasAccess('Account Registration', 'add') ? '' : 'display:none;'"
+            @click="openDialog()"
+            rounded
+            color="primary"
+            dense
+            >Add Employee</v-btn
+          >
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
         </v-col>
       </v-row>
@@ -17,7 +24,6 @@
           <v-simple-table class="border">
             <thead>
               <tr style="background-color: #1976d2">
-                <th style="color: white">ID</th>
                 <th style="color: white">Name</th>
                 <th style="color: white">Username</th>
                 <th style="color: white">Acces Right</th>
@@ -36,17 +42,32 @@
                 v-for="(items, index) in all_products"
                 :key="index"
               >
-                <td>{{ items.id }}</td>
                 <td>{{ items.fullname }}</td>
                 <td>{{ items.username }}</td>
-                <td><v-btn color="primary" x-small @click="viewAccessDialog(items.access)">View Access</v-btn></td>
                 <td>
-                  <v-icon :style="hasAccess('Account Registration','edit')?'':'display:none;'" color="primary" @click="editInventory(items)"
+                  <v-btn color="primary" x-small @click="viewAccessDialog(items.access)"
+                    >View Access</v-btn
+                  >
+                </td>
+                <td>
+                  <v-icon
+                    :style="
+                      hasAccess('Account Registration', 'edit') ? '' : 'display:none;'
+                    "
+                    color="primary"
+                    @click="editInventory(items)"
                     >mdi-pencil</v-icon
                   >
                 </td>
                 <td>
-                  <v-icon :style="hasAccess('Account Registration','delete')?'':'display:none;'" color="error" @click="deleteAccount(items)">mdi-delete</v-icon>
+                  <v-icon
+                    :style="
+                      hasAccess('Account Registration', 'delete') ? '' : 'display:none;'
+                    "
+                    color="error"
+                    @click="deleteAccount(items)"
+                    >mdi-delete</v-icon
+                  >
                 </td>
               </tr>
             </tbody>
@@ -86,36 +107,36 @@
               @click:append-outer="copyText"
             ></v-text-field>
             <v-simple-table>
-      <thead>
-        <tr>
-          <th>Drawer Link</th>
-          <th>Access Right</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(row, index) in tableData" :key="index">
-          <td>{{ row.drawerLink }}</td>
-          <td>
-            <label>
-              <input type="checkbox" v-model="row.accessRights.add" />
-              Add
-            </label>
-            <label>
-              <input type="checkbox" v-model="row.accessRights.read" />
-              Read
-            </label>
-            <label>
-              <input type="checkbox" v-model="row.accessRights.edit" />
-              Edit
-            </label>
-            <label>
-              <input type="checkbox" v-model="row.accessRights.delete" />
-              Delete
-            </label>
-          </td>
-        </tr>
-      </tbody>
-    </v-simple-table>
+              <thead>
+                <tr>
+                  <th>Drawer Link</th>
+                  <th>Access Right</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, index) in tableData" :key="index">
+                  <td>{{ row.drawerLink }}</td>
+                  <td>
+                    <label>
+                      <input type="checkbox" v-model="row.accessRights.add" />
+                      Add
+                    </label>
+                    <label>
+                      <input type="checkbox" v-model="row.accessRights.read" />
+                      Read
+                    </label>
+                    <label>
+                      <input type="checkbox" v-model="row.accessRights.edit" />
+                      Edit
+                    </label>
+                    <label>
+                      <input type="checkbox" v-model="row.accessRights.delete" />
+                      Delete
+                    </label>
+                  </td>
+                </tr>
+              </tbody>
+            </v-simple-table>
             <!-- <v-autocomplete
               v-model="insertItem.access"
               multiple
@@ -170,34 +191,37 @@
           <v-card-title></v-card-title>
           <v-card-text>
             <v-simple-table>
-      <thead>
-        <tr>
-          <th>Drawer Link</th>
-          <th>Access Right</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(row, index) in viewAccessTable" :key="index">
-          <td>{{ row.drawerLink }}</td>
-          <td>
-            <label>
-              
-              <!-- <input disabled type="checkbox" v-model="row.accessRights.add" /> -->
-               <v-icon v-if="row.accessRights.add">mdi-check</v-icon> <v-icon v-else>mdi-radiobox-blank</v-icon>Add
-            </label>
-            <label>
-               <v-icon v-if="row.accessRights.read">mdi-check</v-icon> <v-icon v-else>mdi-radiobox-blank</v-icon>Read
-            </label>
-            <label>
-               <v-icon v-if="row.accessRights.edit">mdi-check</v-icon> <v-icon v-else>mdi-radiobox-blank</v-icon>Edit
-            </label>
-            <label>
-               <v-icon v-if="row.accessRights.delete">mdi-check</v-icon> <v-icon v-else>mdi-radiobox-blank</v-icon>Delete
-            </label>
-          </td>
-        </tr>
-      </tbody>
-    </v-simple-table>
+              <thead>
+                <tr>
+                  <th>Drawer Link</th>
+                  <th>Access Right</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, index) in viewAccessTable" :key="index">
+                  <td>{{ row.drawerLink }}</td>
+                  <td>
+                    <label>
+                      <!-- <input disabled type="checkbox" v-model="row.accessRights.add" /> -->
+                      <v-icon v-if="row.accessRights.add">mdi-check</v-icon>
+                      <v-icon v-else>mdi-radiobox-blank</v-icon>Add
+                    </label>
+                    <label>
+                      <v-icon v-if="row.accessRights.read">mdi-check</v-icon>
+                      <v-icon v-else>mdi-radiobox-blank</v-icon>Read
+                    </label>
+                    <label>
+                      <v-icon v-if="row.accessRights.edit">mdi-check</v-icon>
+                      <v-icon v-else>mdi-radiobox-blank</v-icon>Edit
+                    </label>
+                    <label>
+                      <v-icon v-if="row.accessRights.delete">mdi-check</v-icon>
+                      <v-icon v-else>mdi-radiobox-blank</v-icon>Delete
+                    </label>
+                  </td>
+                </tr>
+              </tbody>
+            </v-simple-table>
           </v-card-text>
         </v-card>
       </v-dialog>
@@ -216,19 +240,49 @@ import secret_key from "../plugins/md5decrypt";
 export default {
   data: () => {
     return {
-      openAccess:false,
-      viewAccessTable:[],
+      openAccess: false,
+      viewAccessTable: [],
       tableData: [
-        { drawerLink: 'POS', accessRights: { add: false, read: true, edit: false, delete: false } },
-        { drawerLink: 'Inventories', accessRights: { add: false, read: true, edit: false, delete: false } },
-        { drawerLink: 'Discount', accessRights: { add: false, read: true, edit: false, delete: false } },
-        { drawerLink: 'Return and Exchange', accessRights: { add: false, read: true, edit: false, delete: false } },
-        { drawerLink: 'Sale Report', accessRights: { add: false, read: true, edit: false, delete: false } },
-        { drawerLink: 'Category', accessRights: { add: false, read: true, edit: false, delete: false } },
-        { drawerLink: 'Transaction Logs', accessRights: { add: false, read: true, edit: false, delete: false } },
-        { drawerLink: 'Void Logs', accessRights: { add: false, read: true, edit: false, delete: false } },
-        { drawerLink: 'Account Registration', accessRights: { add: false, read: false, edit: false, delete: false } },
-        { drawerLink: 'Settings', accessRights: { add: false, read: false, edit: false, delete: false } },
+        {
+          drawerLink: "POS",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Inventories",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Discount",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Return and Exchange",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Sale Report",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Category",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Transaction Logs",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Void Logs",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Account Registration",
+          accessRights: { add: false, read: false, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Settings",
+          accessRights: { add: false, read: false, edit: false, delete: false },
+        },
       ],
       apiUrl: process.env.VUE_APP_API_URL,
 
@@ -269,11 +323,11 @@ export default {
     },
   },
   methods: {
-    viewAccessDialog(access){
-      this.openAccess = true
+    viewAccessDialog(access) {
+      this.openAccess = true;
       // console.log( access)
-      this.viewAccessTable = [...JSON.parse(access)]
-      console.log(this.viewAccessTable )
+      this.viewAccessTable = [...JSON.parse(access)];
+      console.log(this.viewAccessTable);
     },
     copyText() {
       copy(this.insertItem.password, {
@@ -355,17 +409,17 @@ export default {
             icon: "success",
           });
 
-          axios.post(`${this.apiUrl}/account/api/deleteAccount`, val,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      });
+          axios.post(`${this.apiUrl}/account/api/deleteAccount`, val, {
+            headers: {
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            },
+          });
           window.location.reload();
         }
       });
     },
     editInventory(val) {
-      this.tableData = JSON.parse(val.access)
+      this.tableData = JSON.parse(val.access);
       this.addButton = false;
       this.insertItem = {};
       this.add_dialog = true;
@@ -392,28 +446,30 @@ export default {
       // console.log(this.insertItem.password);
     },
     getAllProducts() {
-      axios.get(`${this.apiUrl}/account/api/getAccount`,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+      axios
+        .get(`${this.apiUrl}/account/api/getAccount`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      }).then((res) => {
-        this.all_products = res.data.filter((rec) => {
-          // rec.access = JSON.parse(rec.access);
-          // rec.drawer_access = JSON.parse(rec.drawer_access);
-          return rec;
+        })
+        .then((res) => {
+          this.all_products = res.data.filter((rec) => {
+            // rec.access = JSON.parse(rec.access);
+            // rec.drawer_access = JSON.parse(rec.drawer_access);
+            return rec;
+          });
+          console.log(this.all_products);
         });
-        console.log(this.all_products);
-      });
     },
     updateInventory(val) {
       // console.log(val);
-      val.access = this.tableData
+      val.access = this.tableData;
       axios
-        .post(`${this.apiUrl}/account/api/updateAccount`, val,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+        .post(`${this.apiUrl}/account/api/updateAccount`, val, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      })
+        })
         .then(() => {
           // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
@@ -426,14 +482,13 @@ export default {
             drawer_link: `Accounts`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      });
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
+            headers: {
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            },
+          });
           window.location.reload();
-        this.getAllProducts();
-
+          this.getAllProducts();
         })
         .catch((err) => {
           alert(err);
@@ -448,16 +503,16 @@ export default {
       this.$forceUpdate(); // Force Vue to update the view
     },
     insertInventory() {
-      console.log(this.tableData)
-      this.insertItem.access = this.tableData
+      console.log(this.tableData);
+      this.insertItem.access = this.tableData;
       let add_data = this.insertItem;
       console.log(add_data);
       axios
-        .post(`${this.apiUrl}/account/api/addAccount`, add_data,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+        .post(`${this.apiUrl}/account/api/addAccount`, add_data, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
-      })
+        })
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("NEW ITEM ADDED");
@@ -471,14 +526,16 @@ export default {
             drawer_link: `Accounts`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
           };
-          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      }).then(() => {
-            Swal.fire("Saved!", "", "success");
-            window.location.reload();
-          });
+          axios
+            .post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
+              headers: {
+                authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+              },
+            })
+            .then(() => {
+              Swal.fire("Saved!", "", "success");
+              window.location.reload();
+            });
         })
         .catch((err) => {
           alert(err);
