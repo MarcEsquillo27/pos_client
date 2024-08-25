@@ -124,6 +124,7 @@ export default {
             quantity: 0,
             drawer_link: `Discount`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
           axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
         headers: {

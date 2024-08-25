@@ -141,6 +141,10 @@ export default {
       });
     },
     insertInventory(val){
+      if(!this.toUpdate.productNumber){
+        Swal.fire("Please complete the details", "", "error");
+        return false
+      }
         val.discount_id = this.discount_price
  axios
         .post(`${this.apiUrl}/inventory/api/updateInventory`, val,{
@@ -163,6 +167,7 @@ export default {
             quantity: 1,
             drawer_link: `Discount`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
           axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
         headers: {

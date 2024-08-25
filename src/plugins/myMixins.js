@@ -10,19 +10,22 @@ const myPlugins = {
                     store_name:"",
                     address:"",
                     phone:"",
+                    // printPaper: 10,
                     // name: this.$store.state.storedName.userdetails[0].name
                 };
             },
             computed: {
                 ...mapState([
                     'storedEmp',
-                    'storedName'
+                    'storedName',
+                    'printPaper'
                 ])
             },
             methods: {
                 ...mapMutations([
                     'STORE_EMP',
-                    'STORE_NAME'
+                    'STORE_NAME',
+                    'STORE_PAPER'
                 ]),
                 hasAccess(drawerLink, accessRight) {
                     const drawer = JSON.parse(this.$store.state.storedEmp.userdetails[0].access).find(item => item.drawerLink === drawerLink);
@@ -41,9 +44,10 @@ const myPlugins = {
                         this.phone_number = res.data[0].phone_number;
                       });
                   },
+                  
             },
-            mounted() {
-                this.getStore();
+            mounted() { 
+                // this.getStore();
             },
         });
     }

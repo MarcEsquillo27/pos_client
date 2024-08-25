@@ -199,6 +199,7 @@ export default {
                 quantity:element.quantity,
                 drawer_link:`POS`,
                 date:moment().format("YYYY-MM-DD hh:mm:ss"),
+                transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
               }
                      axios.post('${this.apiUrl}/audit/api/addLogs',audit_logs,{
         headers: {

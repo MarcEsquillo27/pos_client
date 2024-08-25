@@ -87,6 +87,7 @@
                     <td>{{ items.description }}</td>
                     <td>{{ items.product_number }}</td>
                     <td>{{ items.quantity }}</td>
+                    <td>{{ items.transaction_by }}</td>
                     <td>{{ items.drawerLink }}</td>
                     <td>{{ fixedDate(items.date) }}</td>
                   </tr>
@@ -237,6 +238,7 @@ export default {
         { text: "Description ", value: "description" },
         { text: "Product Number ", value: "product_number" },
         { text: "Quantity", value: "quantity" },
+        { text: "Transaction By", value: "transaction_by" },
         { text: "Drawer Link", value: "drawerLink" },
         { text: "Date", value: "date" },
       ],

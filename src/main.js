@@ -14,3 +14,10 @@ new Vue({
   vuetify,
   render: h => h(App)
 }).$mount('#app')
+
+// document.addEventListener('keydown', (event) => {
+//   if (event.key === 'F12') {
+//     alert('Developer tools are disabled.');
+//     event.preventDefault();
+//   }
+// });

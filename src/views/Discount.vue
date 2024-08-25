@@ -200,6 +200,7 @@ export default {
             quantity: val.stock,
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
           axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
         headers: {
@@ -212,6 +213,10 @@ export default {
         });
     },
     insertDiscount() {
+      if(!this.insertItem.discount_value || !this.insertItem.discount_name){
+        Swal.fire("Please complete the details", "", "error");
+        return false
+      }
       let add_data = this.insertItem;
       axios
         .post(`${this.apiUrl}/discount/api/addDiscount`, add_data,{
@@ -235,6 +240,7 @@ export default {
             quantity: 1,
             drawer_link: `Discount`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
           axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
         headers: {

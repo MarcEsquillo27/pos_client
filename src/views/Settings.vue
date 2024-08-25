@@ -16,6 +16,8 @@
           outlined
           label="Phone Number"
         ></v-text-field>
+        
+        <br>
         <v-btn color="success" @click="saveDiscount">Save</v-btn>
       </v-card-text>
     </v-card>

@@ -13,11 +13,14 @@ module.exports = defineConfig({
   transpileDependencies: [
     'vuetify'
   ],
-  // Conditionally configure the public path and other settings
-  publicPath: process.env.NODE_ENV === 'production' ? '/your-app/' : '/',
+  // Use the root path if deploying to the root of your domain
+  publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
   outputDir: 'dist',
   assetsDir: 'static',
-  productionSourceMap: process.env.NODE_ENV !== 'production',
+  
+  // Disable source maps in production to protect your source code
+  productionSourceMap: process.env.NODE_ENV === 'production' ? false : true,
+  
   configureWebpack: {
     optimization: {
       splitChunks: {
@@ -25,6 +28,7 @@ module.exports = defineConfig({
       },
     },
   },
+  
   devServer: {
     proxy: {
       // Proxy all requests starting with /api to your API URL
@@ -32,7 +36,7 @@ module.exports = defineConfig({
         target: process.env.VUE_APP_API_URL,
         changeOrigin: true,
         secure: false, // If your API is HTTP, set this to false
-        // pathRewrite: { '^/api': '' } // Uncomment this line if your API does not have a /api prefix
+        // pathRewrite: { '^/api': '' } // Uncomment if your API does not have a /api prefix
       },
     },
   },

@@ -129,7 +129,7 @@
       ></v-row>
       <v-dialog v-model="add_dialog" width="40%">
         <v-card>
-          <v-card-title> Add Item </v-card-title>
+          <v-card-title> {{ editButton?'Update':'Add' }} Item </v-card-title>
           <v-card-text>
             <v-btn class="mb-2" dense x-small color="primary" @click="barcodeGenerate()"
               >Generate Barcode</v-btn
@@ -198,13 +198,13 @@
               outlined
               dense
             ></v-text-field>
-            <v-text-field
+            <!-- <v-text-field
               v-model="insertItem.discount"
               type="number"
               label="Discount Price"
               outlined
               dense
-            ></v-text-field>
+            ></v-text-field> -->
             <v-row>
               <v-col
                 ><h3 style="color: black">
@@ -268,6 +268,7 @@ export default {
       dialog: false,
       dialogDelete: false,
       dialogEdit: false,
+      actualStock:0,
       currentPage: 1,
       itemsPerPage: 10,
       totalPages: 0,
@@ -441,13 +442,21 @@ export default {
           },
         })
         .then((res) => {
+        
           if (res.data.length) {
+            console.log(res.data)
+            this.insertItem = res.data[0]
             Swal.fire({
               title: "Product Code Exist!",
-              text: "Change product code to avoid multiple code",
-              icon: "error",
+              text: "update product code",
+              icon: "warning",
             });
-            this.insertItem.productNumber = "";
+            this.actualStock += this.insertItem.stock
+            // this.insertItem.stock 
+            delete this.insertItem.discount_value;
+            this.addButton =false
+            this.editButton = true
+            // this.insertItem.productNumber = "";
             return false;
           }
         });
@@ -535,7 +544,31 @@ export default {
         });
     },
     updateInventory(val) {
+      if(!this.insertItem.productNumber || 
+      !this.insertItem.item || 
+      !this.insertItem.unit || 
+      !this.insertItem.brand || 
+      !this.insertItem.categoryID || 
+      !this.insertItem.description || 
+      !this.insertItem.stock || 
+      !this.insertItem.originalPrice || 
+      !this.insertItem.salesPrice
+
+      ){
+
+        Swal.fire("Please complete the details", "", "error");
+        
+        return false
+      }
+      // this.actualStock = this.insertItem.stock
+            if(val.stock <=this.actualStock){
+              alert("Not less than from actual stock")
+              return false
+            }
+            
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
+      delete val.discount_value;
+      delete val.categoryName;
       axios
         .post(`${this.apiUrl}/inventory/api/updateInventory`, val, {
           headers: {
@@ -553,8 +586,10 @@ export default {
             quantity: val.stock,
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
-          axios.post(`${this.apiUrl}/inventory/audit/api/addLogs`, audit_logs, {
+          // console.log(audit_logs)
+          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
             headers: {
               authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
             },
@@ -573,6 +608,22 @@ export default {
       this.$forceUpdate(); // Force Vue to update the view
     },
     insertInventory() {
+      if(!this.insertItem.productNumber || 
+      !this.insertItem.item || 
+      !this.insertItem.unit || 
+      !this.insertItem.brand || 
+      !this.insertItem.categoryID || 
+      !this.insertItem.description || 
+      !this.insertItem.stock || 
+      !this.insertItem.originalPrice || 
+      !this.insertItem.salesPrice
+
+      ){
+
+        Swal.fire("Please complete the details", "", "error");
+        
+        return false
+      }
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       axios
@@ -593,6 +644,7 @@ export default {
             quantity: this.insertItem.stock,
             drawer_link: `Inventories`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
           axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
             headers: {

@@ -704,6 +704,7 @@ export default {
                   quantity: element.quantity,
                   drawer_link: `POS`,
                   date: moment().format("YYYY-MM-DD hh:mm:ss"),
+                  transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
                 };
                 axios
                   .post("http://localhost:12799/audit/api/addLogs", audit_logs)
@@ -725,7 +726,8 @@ export default {
         icon: "success",
         timer: 2000,
       }).then(() => {
-        window.location.reload();
+        // window.location.reload();
+        window.open('http://sit-hposis.skriptr.tech/pos')
       });
       setTimeout(() => {
         const printContents = document.getElementById("receipt-card").innerHTML;

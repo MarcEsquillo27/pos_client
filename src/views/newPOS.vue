@@ -1,8 +1,10 @@
 <template>
   <div>
     <v-container fluid>
-      <h1>Point of Sale <v-icon>mdi-point-of-sale</v-icon></h1>
-
+      <h1>Point of Sale <v-icon>mdi-point-of-sale</v-icon></h1> 
+      Current SalesID: {{ nexSalesID  }}
+      
+     
       <v-row>
         <v-col cols="12" sm="4">
           <v-card class="pa-2" width="100%">
@@ -19,8 +21,19 @@
                     <v-list-item-content>
                       <v-list-item-title>{{ items.item }}</v-list-item-title>
                       <v-list-item-subtitle
-                        >{{ items.salesPrice }} x
-                        {{ items.quantity }}</v-list-item-subtitle
+                      v-if="!items.editMode">{{ items.salesPrice }} x
+                        {{ items.quantity }}
+                   
+                        </v-list-item-subtitle
+                      >
+                      <v-list-item-subtitle
+                      v-else>
+                      <v-text-field dense block type="number" v-model="items.quantity" />
+                      <v-btn x-small color="success" @click="saveChanges(items)"
+                        >Save</v-btn
+                      >
+                   
+                        </v-list-item-subtitle
                       >
                     </v-list-item-content>
                     <v-list-item-action>
@@ -28,7 +41,11 @@
                         ><h1>{{ items.subtotal }}</h1></v-list-item-action-text
                       >
                       <v-list-item-action-text
-                        ><v-icon small @click="toggleDelete(items)" style="color: #ff3333"
+                        >
+                        <v-icon small @click="toggleEditMode(items)" style="color: #5AB55E"
+                          >mdi-pencil</v-icon
+                        >
+                        <v-icon small @click="toggleDelete(items)" style="color: #ff3333"
                           >mdi-delete</v-icon
                         >
                       </v-list-item-action-text>
@@ -91,6 +108,14 @@
                   <v-btn class="mt-2" small @click="pending_dialog = true"
                     >Pending Transaction({{ list_of_pending.length }})</v-btn
                   >
+                  <v-btn
+                 :disabled="cashpayment || epayment ? false : true"
+                  class="mt-2" small
+                  color="primary"
+                  @click="delivery_dialog = true"
+                  >For Delivery</v-btn
+                >
+                 
                 </v-col>
               </v-row>
               <br />
@@ -234,6 +259,7 @@
                   xl="2"
                   v-for="(items, index) in searchProducts"
                   :key="index"
+                  :style="paperPrint == 0?'display: none;':''"
                 >
                   <v-card elevation="10" @click="getProducts(items.productNumber)">
                     <v-card-title>
@@ -310,7 +336,7 @@
           <v-row>
             <v-col cols="6"> Total </v-col>
             <v-col cols="6">
-              {{ total }}
+              {{ totalDiscounted() }}
             </v-col>
           </v-row>
           <v-row>
@@ -357,9 +383,9 @@
           <div id="receipt-card" style="width: 100%">
             <div class="printable">
               <p style="text-align: center">
-                <b>{{ store_name }}</b>
+                <b>{{ store_name }}123</b>
               </p>
-              <p style="text-align: center">Receipt No: {{ salesInvoice }}</p>
+              <p style="text-align: center">Receipt No: {{ nexSalesID }}</p>
               <p style="text-align: center">
                 Cashier Name: {{ this.$store.state.storedEmp.userdetails[0].fullname }}
               </p>
@@ -373,7 +399,7 @@
                   "
                 >
                   <div>Items</div>
-                  <div style="text-align: end">Total Price</div>
+                  <div style="text-align: end">Orignal Price</div>
                 </li>
                 <li
                   v-for="(item, index) in products"
@@ -388,7 +414,7 @@
                     <p>{{ item.quantity }} x {{ item.price }} {{ item.item }}</p>
                   </div>
                   <div style="text-align: end">
-                    <p>{{ item.subtotal }}</p>
+                    <p>{{ item.subtotal}}</p>
                   </div>
                 </li>
               </ul>
@@ -402,7 +428,18 @@
                   "
                 >
                   <div>Total:</div>
-                  <div>{{ total }} PHP</div>
+                  <div>{{ totalDiscounted() }} PHP</div>
+                </li>
+
+                <li
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 0 0 5px 0;
+                  "
+                >
+                  <div>20% Discount:</div>
+                  <div>{{ discounted?'YES':'NO' }}</div>
                 </li>
                 <li
                   style="
@@ -595,6 +632,8 @@ import secret_key from "../plugins/md5decrypt";
 export default {
   data: () => {
     return {
+      nexSalesID:"",
+      paperPrint: 0,  
       apiUrl: process.env.VUE_APP_API_URL,
       category: "",
       currentPage: 1,
@@ -633,7 +672,7 @@ export default {
       change: 0,
       authorization: "",
       headers: [
-        { text: "Item", value: "name" },
+        { text: "Item", value: "item" },
         { text: "Stock", value: "stock" },
         { text: "Price", value: "salesPrice" },
         { text: "Quantity", value: "quantity" },
@@ -693,7 +732,7 @@ export default {
     generateBarcode() {
       console.log(this.salesInvoice, "668");
       if (this.salesInvoice) {
-        JsBarcode("#barcode", this.salesInvoice, {
+        JsBarcode("#barcode", this.nexSalesID, {
           format: "CODE128",
           displayValue: true,
           height: 30,
@@ -778,6 +817,7 @@ export default {
     backTransaction(val, index) {
       let confirmation = confirm("Are you sure you want to continue the transaction?");
       if (confirmation) {
+        console.log(val.children)
         this.products = val.children;
         this.total = this.products.reduce((acc, product) => acc + product.subtotal, 0);
         this.list_of_pending.splice(index, 1);
@@ -815,7 +855,7 @@ export default {
             children: this.products.map((product) => ({
               id: product.id,
               product_name: product.productNumber,
-              name: product.item,
+              item: product.item,
               subtotal: product.subtotal,
               quantity: product.quantity,
               stock: product.stock,
@@ -848,13 +888,22 @@ export default {
     },
     saveDelivery() {
       let get_details = {
+        salesID: this.nexSalesID,
         name: this.contact_name,
         address: this.address,
         contact: this.contact_details,
-        date: this.selectedDate,
-        time: this.selectedTime,
+        shipment_date: this.selectedDate,
+        shipment_time: this.selectedTime,
+        transaction_by: this.$store.state.storedEmp.userdetails[0].fullname
       };
-      this.deliveryArr.push(get_details);
+      // this.deliveryArr.push(get_details);
+
+      axios
+          .post(`${this.apiUrl}/delivery/api/addDelivery`, get_details, {
+            headers: {
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+            },
+          })  
 
       alert("Save Succesfully");
       this.delivery_dialog = false;
@@ -895,8 +944,21 @@ export default {
             },
           })
           .then(() => {
+            
             let get_index = this.products.indexOf(item);
+        
+
             this.products.splice(get_index, 1);
+            for (const item of this.products) {
+              if (item.discounted === true) {
+                this.ifdiscount = true;
+                break;
+              }
+              else{
+                this.ifdiscount = false;
+                break;
+              }
+            }
             // console.log( this.products.splice(get_index, 1))
             this.total = this.total - item.subtotal;
             this.products_code = "";
@@ -926,11 +988,11 @@ export default {
     },
     //CHANGE TOTAL
     changeTotal() {
-      this.change = this.cash - this.total;
+      this.change = this.cash - this.totalDiscounted();
       if (this.change <= 0) {
         return 0;
       } else {
-        return this.cash - this.total;
+        return this.cash - this.totalDiscounted();
       }
     },
     //ALL GET DATA
@@ -1020,7 +1082,7 @@ export default {
           console.log(this.products, "1020");
           axios
             .post(
-              `${this.apiUrl}/sales/api/addSales/${this.$store.state.storedEmp.userdetails[0].fullname}`,
+              `${this.apiUrl}/sales/api/addSales/${this.$store.state.storedEmp.userdetails[0].fullname}/${this.epayment ? "E-Payment" : this.cashpayment ? "Cash" : "" }`,
               this.products,
               {
                 headers: {
@@ -1030,8 +1092,9 @@ export default {
                 },
               }
             )
-            .then(() => {
-              this.salesInvoice = moment().format("YYYYMMDDhhmmss");
+            .then((res) => {
+              // console.log(res.data,"1051")
+              this.salesInvoice = res.data[0];
             })
             .then(() => {
               for (let i = 0; i < this.products.length; i++) {
@@ -1043,6 +1106,7 @@ export default {
                   quantity: element.quantity,
                   drawer_link: `POS`,
                   date: moment().format("YYYY-MM-DD hh:mm:ss"),
+                  transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
                 };
                 axios
                   .post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
@@ -1133,6 +1197,18 @@ export default {
         document.body.style.overflow = originalOverflow;
         document.head.removeChild(style);
       }, 1000);
+
+      // this.printPaper = this.printPaper - 1
+     let paperPrint = this.$store.state.printPaper - 1
+     axios
+        .put(`${this.apiUrl}/storename/api/updateRecieptStore/1/${paperPrint}`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+        })
+     this.$store.commit("STORE_PAPER", paperPrint);
+
+      // console.log(this.printPaper)
     },
 
     // ALL @CHANGE FUNCTION
@@ -1166,8 +1242,34 @@ export default {
           // Handle unauthorized error here (e.g., display message to user)
         });
     },
+    getLatestSalesID(){
+      axios
+        .get(`${this.apiUrl}/sales/api/latestSalesID`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+        })
+        .then((res) => {
+          // console.log(res.data)
+          this.nexSalesID = res.data[0].predicted_next_id
+          // this.list_of_category = res.data;
+        })
+        .catch((error) => {
+          console.error("Error fetching categories:", error);
+          // Handle unauthorized error here (e.g., display message to user)
+        });
+    }
   },
+  created(){
+    if(this.$store.state.printPaper  <= 100){
+      alert(`${this.$store.state.printPaper} PIECES LEFT PLEASE RESTOCK RECIEPT`)
+    }
+    else if (this.$store.state.printPaper  == 0){
+      alert("NO RECEIPT LEFT")    
+    }
+  },      
   mounted() {
+    this.getLatestSalesID()
     this.fetchProducts();
     this.fetchPending();
     setTimeout(() => {
@@ -1175,7 +1277,9 @@ export default {
     }, 1000);
     this.authorization = secret_key(this.$store.state.storedEmp.token);
     console.log(this.apiUrl);
+    this.paperPrint = this.$store.state.printPaper
   },
+  
 };
 </script>
 

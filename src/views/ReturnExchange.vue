@@ -347,6 +347,8 @@ export default {
           authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
         },
       });
+      this.return_dialog = false;
+
       // .then((res)=>{
 
       // })
@@ -381,16 +383,16 @@ export default {
     },
     toggleDelete(item) {
       console.log(item);
-      let confirmation = confirm("Are you sure you want to delete?");
+      let confirmation = confirm("Are you sure you want to Return Item?");
       if (confirmation) {
-        axios.post(`${this.apiUrl}/sales/api/deletebySalesId/${item.id}`, {
+        axios.get(`${this.apiUrl}/sales/api/deletebySalesId/${item.id}`, {
           headers: {
             authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
         });
         let get_index = this.saled_items.indexOf(item);
         this.saled_items.splice(get_index, 1);
-
+      this.saveChanges(item)
         // this.total =this.total - item.subtotal
         // this.products_code = ""
         // this.cash = 0

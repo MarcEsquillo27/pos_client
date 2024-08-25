@@ -8,6 +8,8 @@ export default new Vuex.Store({
   state: {
     storedEmp:[],
     storeName:"",
+    printPaper:1000
+    
   },
 
   mutations: {
@@ -17,6 +19,10 @@ export default new Vuex.Store({
   },
   STORE_NAME: (state,newState) => {
     state.storeName = newState;
+
+},
+STORE_PAPER: (state,newState) => {
+  state.printPaper = newState;
 
 },
   },

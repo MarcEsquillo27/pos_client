@@ -300,6 +300,7 @@ export default {
             quantity: 1,
             drawer_link: `Category`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
           axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
             headers: {
@@ -320,6 +321,10 @@ export default {
       this.$forceUpdate(); // Force Vue to update the view
     },
     insertCategory() {
+      if(!this.insertItem.categoryID || !this.insertItem.categoryName || !this.insertItem.description){
+        Swal.fire("Please complete the details", "", "error");
+        return false
+      }
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       axios
@@ -340,6 +345,7 @@ export default {
             quantity: 1,
             drawer_link: `Category`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
           axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
             headers: {

@@ -84,7 +84,7 @@
       ></v-row>
       <v-dialog v-model="add_dialog" width="40%">
         <v-card>
-          <v-card-title> Add Employee </v-card-title>
+          <v-card-title> {{editButton?"Update":'Add'}} Employee </v-card-title>
           <v-card-text>
             <v-text-field
               v-model="insertItem.fullname"
@@ -106,6 +106,7 @@
               append-outer-icon="mdi-clipboard-outline"
               @click:append-outer="copyText"
             ></v-text-field>
+            <v-btn :disabled="editButton?false:true" small color="primary" @click="autoGeneratePassword()">Generate Password</v-btn>
             <v-simple-table>
               <thead>
                 <tr>
@@ -238,7 +239,7 @@ import Swal from "sweetalert2";
 import secret_key from "../plugins/md5decrypt";
 
 export default {
-  data: () => {
+  data: () => {   
     return {
       openAccess: false,
       viewAccessTable: [],
@@ -246,6 +247,10 @@ export default {
         {
           drawerLink: "POS",
           accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Delivery",  
+          accessRights: { add: false, read: true, edit: false, delete: false }, 
         },
         {
           drawerLink: "Inventories",
@@ -419,19 +424,67 @@ export default {
       });
     },
     editInventory(val) {
+      val.password = ""
       this.tableData = JSON.parse(val.access);
       this.addButton = false;
       this.insertItem = {};
       this.add_dialog = true;
       this.insertItem = val;
       this.editButton = true;
-      this.autoGeneratePassword();
+      // this.autoGeneratePassword();
     },
     openDialog() {
       this.add_dialog = true;
       this.addButton = true;
       this.editButton = false;
       this.insertItem = {};
+      // this.tableData =
+      this.tableData = [
+        {
+          drawerLink: "POS",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Delivery",  
+          accessRights: { add: false, read: true, edit: false, delete: false }, 
+        },
+        {
+          drawerLink: "Inventories",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Discount",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Return and Exchange",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Sale Report",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Category",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Transaction Logs",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Void Logs",
+          accessRights: { add: false, read: true, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Account Registration",
+          accessRights: { add: false, read: false, edit: false, delete: false },
+        },
+        {
+          drawerLink: "Settings",
+          accessRights: { add: false, read: false, edit: false, delete: false },
+        },
+      ]
       this.autoGeneratePassword();
     },
     autoGeneratePassword() {
@@ -481,6 +534,7 @@ export default {
             quantity: 1,
             drawer_link: `Accounts`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
           axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
             headers: {
@@ -494,15 +548,11 @@ export default {
           alert(err);
         });
     },
-    barcodeGenerate() {
-      let twelveDigitNumber = "";
-      for (let i = 0; i < 12; i++) {
-        twelveDigitNumber += Math.floor(Math.random() * 10); // Generate a random digit and concatenate
-      }
-      this.insertItem.productNumber = twelveDigitNumber;
-      this.$forceUpdate(); // Force Vue to update the view
-    },
     insertInventory() {
+      if(!this.insertItem.fullname || !this.insertItem.username || !this.insertItem.password || !this.insertItem.openAccess){
+        Swal.fire("Please complete the details", "", "error");
+        return false
+      }
       console.log(this.tableData);
       this.insertItem.access = this.tableData;
       let add_data = this.insertItem;
@@ -525,6 +575,7 @@ export default {
             quantity: 1,
             drawer_link: `Accounts`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
           axios
             .post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
