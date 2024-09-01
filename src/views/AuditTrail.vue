@@ -83,13 +83,13 @@
                     v-for="(items, index) in paginatedItems"
                     :key="index"
                   >
+                  <td>{{ fixedDate(items.date) }}</td>
+                  <td>{{ items.transaction_by }}</td>
+                  <td>{{ items.description }}</td>
                     <td>{{ items.action }}</td>
-                    <td>{{ items.description }}</td>
                     <td>{{ items.product_number }}</td>
                     <td>{{ items.quantity }}</td>
-                    <td>{{ items.transaction_by }}</td>
                     <td>{{ items.drawerLink }}</td>
-                    <td>{{ fixedDate(items.date) }}</td>
                   </tr>
                 </tbody>
               </v-simple-table>
@@ -234,13 +234,13 @@ export default {
       menu: false,
       date: "",
       headers: [
-        { text: "Action ", value: "action" },
+        { text: "Date", value: "date" },
+        { text: "Transaction By", value: "transaction_by" },
         { text: "Description ", value: "description" },
+        { text: "Action ", value: "action" },
         { text: "Product Number ", value: "product_number" },
         { text: "Quantity", value: "quantity" },
-        { text: "Transaction By", value: "transaction_by" },
         { text: "Drawer Link", value: "drawerLink" },
-        { text: "Date", value: "date" },
       ],
     };
   },

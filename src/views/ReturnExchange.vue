@@ -393,6 +393,8 @@ export default {
         let get_index = this.saled_items.indexOf(item);
         this.saled_items.splice(get_index, 1);
       this.saveChanges(item)
+      window.location.reload();
+
         // this.total =this.total - item.subtotal
         // this.products_code = ""
         // this.cash = 0

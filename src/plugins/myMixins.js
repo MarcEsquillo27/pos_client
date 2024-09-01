@@ -1,5 +1,4 @@
 import { mapState, mapMutations } from 'vuex';
-import axios from "axios";
 
 const myPlugins = {
     install(Vue) {
@@ -35,15 +34,8 @@ const myPlugins = {
                     // Check if the specified accessRight is true
                     return drawer.accessRights[accessRight] === true;
                 },
-                getStore() {
-                    axios
-                      .get(`${this.apiUrl}/storename/api/getStore`)
-                      .then((res) => {
-                        this.store_name = res.data[0].store_name;
-                        this.address = res.data[0].address;
-                        this.phone_number = res.data[0].phone_number;
-                      });
-                  },
+     
+               
                   
             },
             mounted() { 

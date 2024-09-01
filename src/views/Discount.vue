@@ -8,7 +8,7 @@
         </v-col>
         <v-col cols="12" sm="6" class="text-right">
           <v-btn :style="hasAccess('Discount','add')?'':'display:none;'" @click="openDialog()" rounded color="primary" dense
-            >Add Item Discount</v-btn
+            >Add New Discount/Promo</v-btn
           >
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
         </v-col>

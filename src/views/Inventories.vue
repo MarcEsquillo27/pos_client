@@ -260,6 +260,8 @@ import Swal from "sweetalert2";
 import Excel from "exceljs";
 import { saveAs } from "file-saver";
 import secret_key from "../plugins/md5decrypt";
+import Inventory from "../functions/Inventory"
+import Audit from "../functions/Audit"
 export default {
   data: () => {
     return {
@@ -435,12 +437,7 @@ export default {
     },
 
     checkSameBarcode(val) {
-      axios
-        .get(`${this.apiUrl}/inventory/api/getPerItem/${val}`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+      Inventory.fetchPerProduct(this.$store.state.storedEmp.token,val)
         .then((res) => {
         
           if (res.data.length) {
@@ -526,16 +523,7 @@ export default {
       this.insertItem = {};
     },
     fetchProducts() {
-      axios
-        .get(`${this.apiUrl}/inventory/api/getInventory`, {
-          params: {
-            page: this.currentPage,
-            page_size: this.itemsPerPage,
-          },
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+      Inventory.fetchProducts(this.$store.state.storedEmp.token,this.currentPage,this.itemsPerPage)
         .then((res) => {
           const data = res.data;
           this.all_products = data.products;
@@ -569,12 +557,7 @@ export default {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       delete val.discount_value;
       delete val.categoryName;
-      axios
-        .post(`${this.apiUrl}/inventory/api/updateInventory`, val, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+      Inventory.updateProduct(this.$store.state.storedEmp.token,val)
         .then(() => {
           // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
@@ -588,12 +571,8 @@ export default {
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
             transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
-          // console.log(audit_logs)
-          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
-            headers: {
-              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-            },
-          });
+
+          Audit.AddLogs(this.$store.state.storedEmp.token,audit_logs)
         })
         .catch((err) => {
           alert(err);
@@ -626,12 +605,7 @@ export default {
       }
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
-      axios
-        .post(`${this.apiUrl}/inventory/api/addInventory`, add_data, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+      Inventory.addProduct(this.$store.state.storedEmp.token,add_data)
         .then(() => {
           this.all_products.push(this.insertItem);
           alert("NEW ITEM ADDED");
@@ -646,11 +620,9 @@ export default {
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
             transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
-          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
-            headers: {
-              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-            },
-          });
+          
+          Audit.AddLogs(this.$store.state.storedEmp.token,audit_logs)
+
         })
         .catch((err) => {
           alert(err);

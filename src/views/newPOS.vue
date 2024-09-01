@@ -238,7 +238,7 @@
                     @change="filterCategory()"
                   />
                 </v-col>
-                <v-col cols="12" sm="6">
+                <v-col >
                   <v-text-field
                     outlined
                     rounded
@@ -247,7 +247,11 @@
                     dense
                     label="Search"
                     v-model="product_search"
+                    @change="fetchProducts()"
                   />
+                </v-col>
+                <v-col>
+                  <v-btn @click="searchItems()"><v-icon>mdi-magnify</v-icon></v-btn>
                 </v-col>
               </v-row>
               <v-row>
@@ -257,7 +261,7 @@
                   md="4"
                   lg="3"
                   xl="2"
-                  v-for="(items, index) in searchProducts"
+                  v-for="(items, index) in filterCategory"
                   :key="index"
                   :style="paperPrint == 0?'display: none;':''"
                 >
@@ -321,6 +325,15 @@
             block
             rounded
             color="success"
+            >Void Transaction</v-btn
+          >
+          <v-btn
+            @click="purchase()"
+            v-if="qr_image == 'gcash' || qr_image == 'paymaya'"
+            dense
+            block
+            rounded
+            color="success"
             >Purchase</v-btn
           >
 
@@ -365,13 +378,21 @@
             @click="purchase()"
             v-if="change >= 0"
             dense
-            block
+            
             rounded
             color="success"
             >Purchase</v-btn
           >
 
-          <v-btn v-else disabled dense block rounded color="success">Purchase</v-btn>
+          <v-btn v-else disabled dense rounded color="success">Purchase</v-btn>
+          <v-btn
+            @click="voidTransaction()"
+            dense
+            
+            rounded
+            color="error"
+            >Void Transaction</v-btn
+          >
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -622,12 +643,19 @@
 </template>
 
 <script>
-import axios from "axios";
 import moment from "moment";
 import Swal from "sweetalert2";
 import _ from "lodash";
 import JsBarcode from "jsbarcode";
 import secret_key from "../plugins/md5decrypt";
+import Inventory from "../functions/Inventory"
+import Pending from "../functions/Pending"
+import Delivery from "../functions/Delivery"
+import Void from "../functions/Void"
+import Sales from "../functions/Sales"
+import Audits from "../functions/Audit"
+import getStore from "../functions/getStoreName"
+import Category from "../functions/Category"
 // import printJS from "print-js";
 export default {
   data: () => {
@@ -647,6 +675,7 @@ export default {
       search: "",
       ifdiscount: false,
       list_of_pending: [],
+      togle_pending:[],
       pending_dialog: false,
       pendingItemArr: [],
       for_delivery: false,
@@ -691,9 +720,9 @@ export default {
   },
   computed: {
     filteredPendingTransactions() {
-      if (!this.search) return this.list_of_pending;
+      if (!this.search) return this.togle_pending;
       const searchTerm = this.search.toLowerCase();
-      return this.list_of_pending.filter((item) => {
+      return this.togle_pending.filter((item) => {
         return item.name.toLowerCase().includes(searchTerm);
       });
     },
@@ -708,29 +737,55 @@ export default {
       }
       return filteredProducts;
     },
-    searchProducts() {
-      let productArr = this.filterCategory;
-      return productArr.filter((item) => {
-        // Convert both item name and product number to lowercase for case-insensitive search
-        const itemName = item.item.toLowerCase();
-        const productNumber = item.productNumber.toLowerCase();
+    // searchProducts() {
+    //   let productArr = this.filterCategory;
+    //   return productArr.filter((item) => {
+    //     // Convert both item name and product number to lowercase for case-insensitive search
+    //     const itemName = item.item.toLowerCase();
+    //     const productNumber = item.productNumber.toLowerCase();
 
-        // Check if either item name or product number contains the search query
-        return (
-          itemName.includes(this.product_search.toLowerCase()) ||
-          productNumber.includes(this.product_search.toLowerCase())
-        );
-      });
-    },
+    //     // Check if either item name or product number contains the search query
+    //     return (
+    //       itemName.includes(this.product_search.toLowerCase()) ||
+    //       productNumber.includes(this.product_search.toLowerCase())
+    //     );
+    //   });
+    // },
   },
   methods: {
-    // backTransaction(val) {
-    //   console.log(val.children);
-    //   this.products = val.children;
-    //   this.pending_dialog = false;
-    // },
+    async initializeApp() {
+    await this.getLatestSalesID();
+    await this.fetchProducts();
+    await this.fetchPending();
+    await new Promise(resolve => setTimeout(() => {
+      this.getAllCategories();
+      resolve();
+    }, 1000));
+    this.authorization = secret_key(this.$store.state.storedEmp.token);
+    this.paperPrint = this.$store.state.printPaper;
+  },
+  searchItems(){
+    if(!this.product_search){
+      alert('Please enter some text in the text field.')
+      return false
+    }
+    Inventory.fetchPerProduct(this.$store.state.storedEmp.token,this.product_search).then((res)=>{
+        const data = res.data;
+          this.list_of_products = data.filter((rec) => {
+            if (rec.stock > 0) {
+              if (rec.discount_id !== null) {
+                rec.salesPrice -= (rec.salesPrice * rec.discount_value) / 100;
+              }
+              return rec;
+            }
+          });
+          this.list_of_products;
+        })
+        .catch((error) => {
+          console.error("Error fetching products:", error);
+        });
+  },
     generateBarcode() {
-      console.log(this.salesInvoice, "668");
       if (this.salesInvoice) {
         JsBarcode("#barcode", this.nexSalesID, {
           format: "CODE128",
@@ -741,20 +796,8 @@ export default {
       }
     },
     fetchProducts() {
-      axios
-        .get(`${this.apiUrl}/inventory/api/getInventory`, {
-          params: {
-            page: this.currentPage,
-            page_size: this.itemsPerPage,
-          },
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
-        .then((response) => {
+      Inventory.fetchProducts(this.$store.state.storedEmp.token,this.currentPage,this.itemsPerPage).then((response) => {
           const data = response.data;
-          // this.list_of_products = data.products;
-          console.log(data.products);
           this.list_of_products = data.products.filter((rec) => {
             if (rec.stock > 0) {
               if (rec.discount_id !== null) {
@@ -764,8 +807,6 @@ export default {
             }
           });
           this.totalPages = Math.ceil(data.totalItems / this.itemsPerPage);
-
-          // console.log(this.list_of_products)
           this.list_of_products;
         })
         .catch((error) => {
@@ -773,23 +814,16 @@ export default {
         });
     },
     fetchPending() {
-      axios
-        .get(`${this.apiUrl}/pending/api/getPending`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`,
-          },
-        })
+      Pending.fetchPending(this.$store.state.storedEmp.token)
         .then((res) => {
-          const data = res.data;
+          this.list_of_pending = res.data;
 
           // Parse the 'children' field
-          data.forEach((item) => {
+          this.list_of_pending.forEach((item) => {
             item.children = JSON.parse(item.children);
             item.expanded = item.expanded === 1 ? true : false;
           });
-          this.list_of_pending = data;
-          // console.log({ ...data });
-          // this.list_of_pending.push({ ...data });
+          this.togle_pending = this.list_of_pending;
         })
         .catch((error) => {
           console.error("Error fetching data:", error);
@@ -801,9 +835,9 @@ export default {
     discountedPrice(val) {
       return (this.discounted_price -= (val.salesPrice * val.discount_value) / 100);
     },
-    togglePanel(index) {
-      this.fetchPending();
-      this.filteredPendingTransactions.forEach((item, i) => {
+     togglePanel(index) {
+      
+       this.filteredPendingTransactions.forEach((item, i) => {
         if (i === index) {
           // Toggle the expanded state of the clicked panel
           item.expanded = !item.expanded;
@@ -811,22 +845,20 @@ export default {
           // Collapse other panels
           item.expanded = false;
         }
-        // console.log(item);
       });
     },
     backTransaction(val, index) {
+      if(this.products.length >=1){
+        alert("There is on going transaction")
+        return false
+      }
       let confirmation = confirm("Are you sure you want to continue the transaction?");
       if (confirmation) {
-        console.log(val.children)
         this.products = val.children;
         this.total = this.products.reduce((acc, product) => acc + product.subtotal, 0);
         this.list_of_pending.splice(index, 1);
         this.pending_dialog = false;
-        axios.get(`${this.apiUrl}/pending/api/deletePending/${val.id}`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`,
-          },
-        });
+        Pending.deletePending(this.$store.state.storedEmp.token,val.id)
         alert("Transaction Complete");
       }
     },
@@ -863,20 +895,21 @@ export default {
             })),
             expanded: false,
           };
-          axios.post(`${this.apiUrl}/pending/api/addPending`, item, {
-            headers: {
-              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-            },
-          });
+          Pending.addPending(this.$store.state.storedEmp.token,item)
+         
           this.list_of_pending.push(item);
-
+           this.list_of_pending.forEach((item) => {
+            item.expanded = item.expanded === 1 ? true : false;
+          });
+          this.togle_pending = this.list_of_pending;
+          
           this.products = [];
           this.products_code = "";
           this.total = 0;
           this.cash = 0;
           this.change = 0;
           Swal.fire("Saved!", "", "success");
-          console.log(this.list_of_pending);
+          // window.location.reload()
         } else if (result.isDenied) {
           Swal.fire("Changes are not saved", "", "info");
         }
@@ -897,21 +930,14 @@ export default {
         transaction_by: this.$store.state.storedEmp.userdetails[0].fullname
       };
       // this.deliveryArr.push(get_details);
-
-      axios
-          .post(`${this.apiUrl}/delivery/api/addDelivery`, get_details, {
-            headers: {
-              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-            },
-          })  
-
+    Delivery.addDelivery(this.$store.state.storedEmp.token,get_details)
+     
       alert("Save Succesfully");
       this.delivery_dialog = false;
     },
     voidItem() {
       let confirmation = confirm("Are you sure you want to void the transaction?");
       if (confirmation) {
-        console.log(this.products);
         // this.products = [];
         this.products_code = "";
         this.total = 0;
@@ -934,16 +960,9 @@ export default {
     toggleDelete(item) {
       let confirmation = confirm("Are you sure you want to delete?");
       if (confirmation) {
-        // console.log(item)
         let void_items = [];
         void_items.push(item);
-        axios
-          .post(`${this.apiUrl}/void/api/addVoid`, void_items, {
-            headers: {
-              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-            },
-          })
-          .then(() => {
+        Void.addVoid(this.$store.state.storedEmp.token,void_items).then(() => {
             
             let get_index = this.products.indexOf(item);
         
@@ -959,7 +978,6 @@ export default {
                 break;
               }
             }
-            // console.log( this.products.splice(get_index, 1))
             this.total = this.total - item.subtotal;
             this.products_code = "";
             this.cash = 0;
@@ -998,12 +1016,7 @@ export default {
     //ALL GET DATA
     getProducts(val) {
       if (val) {
-        axios
-          .get(`${this.apiUrl}/inventory/api/getPerItem/${val}`, {
-            headers: {
-              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-            },
-          })
+        Inventory.fetchPerProduct(this.$store.state.storedEmp.token,val)
           .then((res) => {
             let result_product = res.data[0];
             result_product.discounted = false;
@@ -1070,30 +1083,37 @@ export default {
     cashPayment() {
       this.cash_dialog = true;
     },
+    voidTransaction(){
+      let confirmation = confirm("Are you sure you want to Void the transaction?");
+      if (confirmation) {
+        // let void_items = [];
+      Void.addVoid(this.$store.state.storedEmp.token,this.products).then(()=>{
+        Swal.fire({
+  title: "Transaction Void",
+  icon: "success"
+});
+        this.products = []
+        this.total = 0;
+            this.products_code = "";
+            this.cash = 0;
+            this.change = 0;
+            this.cash_dialog = false;
+            this.epayment_dialog = false;
+            this.cashpayment = false;
+            this.epayment =false;
+
+
+      })
+
+      }
+      // this.products =
+      // Void.addVoid(this.$store.state.storedEmp.token,void_items)
+    },
     purchase() {
-      console.log(this.products);
-      axios
-        .post(`${this.apiUrl}/inventory/api/updateInventoryStock`, this.products, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+      Inventory.updateProduct(this.$store.state.storedEmp.token,this.products)
         .then(() => {
-          console.log(this.products, "1020");
-          axios
-            .post(
-              `${this.apiUrl}/sales/api/addSales/${this.$store.state.storedEmp.userdetails[0].fullname}/${this.epayment ? "E-Payment" : this.cashpayment ? "Cash" : "" }`,
-              this.products,
-              {
-                headers: {
-                  authorization: `Bearer ${secret_key(
-                    this.$store.state.storedEmp.token
-                  )}`, // Assuming Bearer token
-                },
-              }
-            )
+          Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,this.epayment,this.cashpayment)
             .then((res) => {
-              // console.log(res.data,"1051")
               this.salesInvoice = res.data[0];
             })
             .then(() => {
@@ -1108,17 +1128,8 @@ export default {
                   date: moment().format("YYYY-MM-DD hh:mm:ss"),
                   transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
                 };
-                axios
-                  .post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
-                    headers: {
-                      authorization: `Bearer ${secret_key(
-                        this.$store.state.storedEmp.token
-                      )}`, // Assuming Bearer token
-                    },
-                  })
-                  .then((res) => {
-                    console.log(res.data);
-                  });
+                Audits.AddLogs(this.$store.state.storedEmp.token,audit_logs)
+                
               }
             });
           this.receipt_dialog = true;
@@ -1200,15 +1211,9 @@ export default {
 
       // this.printPaper = this.printPaper - 1
      let paperPrint = this.$store.state.printPaper - 1
-     axios
-        .put(`${this.apiUrl}/storename/api/updateRecieptStore/1/${paperPrint}`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+     getStore.updateReciept(this.$store.state.storedEmp.token,paperPrint)
      this.$store.commit("STORE_PAPER", paperPrint);
 
-      // console.log(this.printPaper)
     },
 
     // ALL @CHANGE FUNCTION
@@ -1222,18 +1227,8 @@ export default {
       }
     },
     getAllCategories() {
-      // alert(this.authorization)
-      // console.log( {
-      //       'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-      //     })
-      // console.log(secret_key(this.$store.state.storedEmp.token))
-      // let token =
-      axios
-        .get(`${this.apiUrl}/category/api/getCategory`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+ 
+      Category.getCategory(this.$store.state.storedEmp.token)
         .then((res) => {
           this.list_of_category = res.data;
         })
@@ -1243,14 +1238,8 @@ export default {
         });
     },
     getLatestSalesID(){
-      axios
-        .get(`${this.apiUrl}/sales/api/latestSalesID`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+      Sales.getLatestSalesID(this.$store.state.storedEmp.token)
         .then((res) => {
-          // console.log(res.data)
           this.nexSalesID = res.data[0].predicted_next_id
           // this.list_of_category = res.data;
         })
@@ -1269,15 +1258,7 @@ export default {
     }
   },      
   mounted() {
-    this.getLatestSalesID()
-    this.fetchProducts();
-    this.fetchPending();
-    setTimeout(() => {
-      this.getAllCategories();
-    }, 1000);
-    this.authorization = secret_key(this.$store.state.storedEmp.token);
-    console.log(this.apiUrl);
-    this.paperPrint = this.$store.state.printPaper
+   this.initializeApp()
   },
   
 };

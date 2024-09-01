@@ -59,9 +59,8 @@
 
 <script>
 import router from "@/router";
-import axios from "axios";
 import Swal from "sweetalert2";
-import secret_key from "./plugins/md5decrypt";
+import getStore from "./functions/getStoreName"
 
 // impoty axios from axios
 export default {
@@ -91,6 +90,7 @@ export default {
     ],
   }),
   computed: {
+     
     filteredNavList() {
       let accesArray = null;
 
@@ -123,31 +123,24 @@ export default {
   },
 
   methods: {
-    getStore() {
-      axios
-        .get(`${this.apiUrl}/storename/api/getStore`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
-        .then((res) => {
-          this.id = res.data[0].id;
-          this.$store.commit("STORE_PAPER", res.data[0].receipt);
-        });
+    getStoreDetails() {
+     getStore.getStoreData(this.$store.state.storedEmp.token).then((res)=>{
+      this.store_name = res.data[0].store_name
+     })
     },
+    
     saveReceiptStock(){
       this.$store.state.printPaper = this.$store.state.printPaper + parseInt(this.receipt_stock)
-      
-      axios
-        .put(`${this.apiUrl}/storename/api/updateRecieptStore/${this.id}/${ this.$store.state.printPaper}`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+      // console.log(this.$store.state.printPaper)
+
+
+      getStore.getStore(this.$store.state.storedEmp.token,this.$store.state.printPaper)
         .then(() => {
           Swal.fire("Saved!", "", "success");
           this.restock_reciept_dialog = false
-          location.reload();
+          // setTimeout(() => {
+          // location.reload();
+          // }, 1000);
         });
       
    
@@ -161,7 +154,7 @@ export default {
     },
   },
   mounted(){
-    this.getStore()
+    this.getStoreDetails()
   },
 };
 </script>

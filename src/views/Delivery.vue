@@ -69,10 +69,9 @@
 </template>
 
 <script>
-import axios from "axios";
 import Swal from "sweetalert2";
-import secret_key from "../plugins/md5decrypt";
 import moment from "moment";
+import Delivery from "../functions/Delivery"
 
 export default {
   data: () => {
@@ -112,12 +111,8 @@ export default {
   },
   methods: {
     searchDelivery() {
-      axios
-        .get(`${this.apiUrl}/delivery/api/searchSalesID/${this.search}`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+      Delivery.searchDelivery(this.$store.state.storedEmp.token,this.search)
+      
         .then((res) => {
           this.list_of_delivery = res.data.filter((rec) => {
             rec.shipment_date = moment(rec.shipment_date).format("YYYY-MM-DD");
@@ -139,12 +134,8 @@ export default {
       }).then(async (result) => {
         if (result.isConfirmed) {
           Swal.fire("Saved!", "", "success");
-          await axios
-            .get(`${this.apiUrl}/delivery/api/updateDelivery/${rec.id}`, {
-              headers: {
-                authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-              },
-            })
+          Delivery.updateDelivery(this.$store.state.storedEmp.token,rec.id)
+        
             .then(() => {
               location.reload();
             });
@@ -154,16 +145,7 @@ export default {
       });
     },
     getAllItems() {
-      axios
-        .get(`${this.apiUrl}/delivery/api/getDelivery`, {
-          params: {
-            page: this.currentPage,
-            page_size: this.itemsPerPage,
-          },
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+      Delivery.getDelivery(this.$store.state.storedEmp.token,this.currentPage,this.itemsPerPage)
         .then((res) => {
           const data = res.data;
           this.list_of_delivery = data.delivery.filter((rec) => {
