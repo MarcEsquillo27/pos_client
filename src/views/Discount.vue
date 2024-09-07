@@ -8,7 +8,7 @@
         </v-col>
         <v-col cols="12" sm="6" class="text-right">
           <v-btn :style="hasAccess('Discount','add')?'':'display:none;'" @click="openDialog()" rounded color="primary" dense
-            >Add New Discount/Promo</v-btn
+            > New Discount/Promo</v-btn
           >
           <!-- <v-btn rounded color="success" dense>Data Extraction</v-btn> -->
         </v-col>
@@ -18,9 +18,16 @@
           <v-card elevation-24 @click="tableDiscount(items.id)">
            
             <v-card-title class="justify-center"
-              >{{items.discount_name}} <v-icon style="color: black">mdi-sale</v-icon></v-card-title
+              >{{items.discount_name}} 
+              <v-icon style="color: black">mdi-sale</v-icon>
+
+              </v-card-title
             >
-          </v-card></v-col
+          </v-card>
+          <v-btn x-small color="primary" xs dark @click="EditDiscount(items)">edit</v-btn>
+          <v-btn x-small color="error" xs dark @click="DeleteDiscount(items)">delete</v-btn>
+
+          </v-col
         >
       </v-row>
   <!-- DISCOUNT LIST -->
@@ -42,7 +49,7 @@
       <!-- ADD NEW DISCOUNT -->
       <v-dialog v-model="add_dialog" width="40%">
         <v-card>
-          <v-card-title> Add Discount </v-card-title>
+          <v-card-title> {{ editButton?"Edit":"Add"}} Discount </v-card-title>
           <v-card-text>
             <v-text-field
               v-model="insertItem.discount_name"
@@ -69,7 +76,7 @@
             <v-btn
               class="mt-1"
               :style="!editButton ? 'display:none;' : ''"
-              @click="updateInventory(insertItem)"
+              @click="updateDiscount(insertItem)"
               color="success"
               block
             >
@@ -79,15 +86,6 @@
         </v-card>
       </v-dialog>
     </v-container>
-    <v-footer class="footer" dense>
-      <v-row>
-        <v-col>
-          Legends: <v-icon style="color: white">mdi-square</v-icon> - Active Stock
-          <v-icon style="color: #ce4257">mdi-square</v-icon> - Low Stock
-          <v-icon style="color: #ffbb64">mdi-square</v-icon> - Out of Stock
-        </v-col>
-      </v-row>
-    </v-footer>
   </div>
 </template>
 
@@ -96,6 +94,8 @@ import axios from "axios";
 import moment from "moment";
 import Swal from "sweetalert2";
 import ItemLisDiscountDialog from "../components/ItemLisDiscountDialog.vue"
+import Discount from "../functions/Discount"
+import Audit from "../functions/Audit"
 import secret_key from "../plugins/md5decrypt";
 export default {
    components: {
@@ -121,9 +121,7 @@ export default {
       low_products: false,
       filter_all: false,
       no_products: false,
-      insertItem: {
-        productNumber: "",
-      },
+      insertItem: {},
       menu: false,
       date: "",
       headers: [
@@ -142,6 +140,37 @@ export default {
  
   },
   methods: {
+    DeleteDiscount(val){
+       Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      }).then((result) => {
+         if (result.isConfirmed) {
+          Swal.fire({
+            title: "Deleted!",
+            text: "The Discount has been deleted.",
+            icon: "success",
+          });
+        Discount.deleteDiscount(this.$store.state.storedEmp.token,val).then(()=>{
+            location.reload()
+        })
+
+         }
+      })
+    },
+    EditDiscount(val){
+      console.log(val)
+      this.add_dialog = true;
+      this.addButton = false;
+      this.editButton = true;
+      this.insertItem = val
+
+    },
     editInventory(val) {
       this.addButton = false;
       this.insertItem = {};
@@ -181,38 +210,37 @@ export default {
         this.list_of_products = res.data;
       });
     },
-    updateInventory(val) {
-      val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
-      axios
-        .post(`${this.apiUrl}/inventory/api/updateInventory`, val,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      })
+    updateDiscount(val) {
+       if(this.insertItem.discount_value > 100){
+           Swal.fire("1 to 100 value only", "", "error");
+        return false
+      }
+      // val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
+      Discount.updateDiscount(this.$store.state.storedEmp.token,val)
         .then(() => {
           // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
           this.add_dialog = false;
           let audit_logs = {
             action: `Update Item`,
-            description: `Update Item: ${val.productNumber} stock: ${val.stock}`,
-            product_number: val.productNumber,
-            quantity: val.stock,
-            drawer_link: `Inventories`,
+            description: `Update Discount: ${val.discount_name}`,
+            product_number: val.id,
+            quantity: 0,
+            drawer_link: `Discount`,
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
             transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
-          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      });
+         Audit.AddLogs(this.$store.state.storedEmp.token,audit_logs);
         })
         .catch((err) => {
           alert(err);
         });
     },
     insertDiscount() {
+      if(this.insertItem.discount_value > 100){
+           Swal.fire("1 to 100 value only", "", "error");
+        return false
+      }
       if(!this.insertItem.discount_value || !this.insertItem.discount_name){
         Swal.fire("Please complete the details", "", "error");
         return false

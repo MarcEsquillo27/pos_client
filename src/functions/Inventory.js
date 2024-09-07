@@ -3,6 +3,16 @@ import secret_key from "../plugins/md5decrypt";
 
 let apiUrl = process.env.VUE_APP_API_URL
 const httpRequest = {
+  
+  getAllProducts(token){
+    return Promise.resolve(
+      axios.get(`${apiUrl}/inventory/api/getAllInvetory`,{
+        headers: {
+            'authorization': `Bearer ${secret_key(token)}`, // Assuming Bearer token
+          },
+      })
+    )
+  },
 // GET INVENTORY
   fetchProducts(token,currentPage,itemsPerPage) {
     return Promise.resolve(
@@ -39,6 +49,17 @@ const httpRequest = {
             authorization: `Bearer ${secret_key(token)}`, // Assuming Bearer token
           },
         })
+    )
+  },
+
+  updateInventory(token,toUpdate){
+    return Promise.resolve(
+      axios
+      .post(`${apiUrl}/inventory/api/updateInventory`, toUpdate,{
+      headers: {
+          'authorization': `Bearer ${secret_key(token)}`, // Assuming Bearer token
+        },
+    })
     )
   },
   

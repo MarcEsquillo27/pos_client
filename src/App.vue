@@ -77,6 +77,7 @@ export default {
         to: "/dashboard",
       },
       { title: "Point of Sale", icon: "mdi-point-of-sale", to: "/pos" },
+      { title: "PWD Logs", icon: "mdi-wheelchair", to: "/pwd" },
       { title: "Delivery Schedule", icon: "mdi-truck-delivery", to: "/delivery" },
       { title: "Inventories", icon: "mdi-format-list-checks", to: "/inventories" },
       { title: "Discount", icon: "mdi-sale", to: "/discount" },
@@ -103,6 +104,7 @@ export default {
             const matchingAccessRight = accesArray.find((access) => {
               const linkMapping = {
                 pos: "POS",
+                pwd: "PWD",
                 delivery: "Delivery",
                 inventories: "Inventories",
                 discount: "Discount",
@@ -126,6 +128,7 @@ export default {
     getStoreDetails() {
      getStore.getStoreData(this.$store.state.storedEmp.token).then((res)=>{
       this.store_name = res.data[0].store_name
+      console.log(res.data,"139")
      })
     },
     

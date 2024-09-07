@@ -19,11 +19,13 @@
                 >
                   <v-list-item>
                     <v-list-item-content>
-                      <v-list-item-title>{{ items.item }}</v-list-item-title>
+                      <v-list-item-title>{{ items.item }}   <v-icon :style="items.discount_value ? '' : 'display:none'">
+                        mdi-sale
+                      </v-icon></v-list-item-title>
                       <v-list-item-subtitle
                       v-if="!items.editMode">{{ items.salesPrice }} x
                         {{ items.quantity }}
-                   
+                      
                         </v-list-item-subtitle
                       >
                       <v-list-item-subtitle
@@ -70,6 +72,7 @@
                    20% Discount
                   "
                     v-model="discounted"
+                    @click="discounted?openPwdDialog():pwd_dialog = false"
                     hide-details
                 /></v-col>
                 <v-col>
@@ -139,9 +142,9 @@
                   Mode of Payment:
                   {{ epayment ? "E-Payment" : cashpayment ? "Cash" : "" }}
                   <br />
-                  Orginal Total:
+                  Subtotal: {{ subTotal() }}
                   <br />
-                  Discounted Applied Amount:
+                  Applied Discount:{{ appliedDiscount() }}
                 </v-col>
               </v-row>
               <v-row>
@@ -149,72 +152,7 @@
                   <h1 style="float: right">Total: {{ totalDiscounted() }}</h1></v-col
                 >
               </v-row>
-              <!-- <v-row>
-                <v-col v-if="!deliveryArr.length"
-                  ><v-btn
-                    :disabled="total > 0 ? false : true"
-                    rounded
-                    block
-                    color="primary"
-                    @click="delivery_dialog = true"
-                    >For Delivery</v-btn
-                  ></v-col
-                >
-                <v-col v-else
-                  ><v-btn
-                    :disabled="total > 0 ? false : true"
-                    rounded
-                    block
-                    color="success"
-                    @click="delivery_dialog = true"
-                    >Edit Delivery</v-btn
-                  ></v-col
-                >
-              </v-row> -->
-              <!-- <v-row class="mt-5">
-                <v-col cols="12"> Payment Type </v-col>
-                <v-col cols="12">
-                  <v-btn
-                    :disabled="total > 0 ? false : true"
-                    rounded
-                    block
-                    @click="electronicPayment()"
-                    class="mt-1"
-                    outlined
-                    dense
-                    >E-payment</v-btn
-                  >
                 
-                </v-col>
-              </v-row> -->
-              <!-- <v-btn
-                :disabled="total > 0 ? false : true"
-                rounded
-                block
-                @click="cashPayment()"
-                class="mt-1"
-                outlined
-                dense
-                >CASH</v-btn
-              > -->
-              <!-- <v-btn
-                :disabled="total > 0 ? false : true"
-                @click="pendingItem()"
-                rounded
-                block
-                color="warning"
-                class="mt-2"
-                >Add to Pending</v-btn
-              > -->
-              <!-- <v-btn
-                :disabled="total > 0 ? false : true"
-                @click="voidItem()"
-                rounded
-                block
-                color="error"
-                class="mt-2"
-                >Void</v-btn
-              > -->
             </v-card-text>
           </v-card>
         </v-col>
@@ -268,7 +206,7 @@
                   <v-card elevation="10" @click="getProducts(items.productNumber)">
                     <v-card-title>
                       {{ items.item }}
-                      <v-icon :style="items.discount_id ? '' : 'display:none'">
+                      <v-icon :style="items.discount_value ? '' : 'display:none'">
                         mdi-sale
                       </v-icon>
                     </v-card-title>
@@ -400,11 +338,11 @@
     <!-- RECEIPT -->
     <v-dialog v-model="receipt_dialog" width="500">
       <v-card>
-        <div style="overflow-y: hidden; padding: 1px">
-          <div id="receipt-card" style="width: 100%">
+        <div style="overflow-y: hidden; padding: 60px; margin-top: 20px; margin-bottom: 20px;">
+          <div id="receipt-card" style="width: 100%; margin-top: 20px; margin-bottom: 20px;">
             <div class="printable">
               <p style="text-align: center">
-                <b>{{ store_name }}123</b>
+                <b>{{ store_name }}</b>
               </p>
               <p style="text-align: center">Receipt No: {{ nexSalesID }}</p>
               <p style="text-align: center">
@@ -553,6 +491,7 @@
             block
             v-model="selectedDate"
             v-if="showDatePicker"
+            :min="minDate"
           ></v-date-picker>
           <v-text-field
             v-model="selectedTime"
@@ -582,7 +521,7 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-
+<!-- PENDING DIALOG -->
     <v-dialog v-model="pending_dialog" fullscreen>
       <v-card>
         <v-card-title style="background-color: #1976d2; color: #fff"
@@ -613,9 +552,9 @@
                   @click.native="togglePanel(i)"
                 >
                   <v-expansion-panel-header>
-                    {{ item.name }}
                   </v-expansion-panel-header>
                   <v-expansion-panel-content v-if="item.expanded">
+                    {{ item.children }}
                     <v-data-table
                       :headers="headers"
                       :items="item.children"
@@ -639,6 +578,93 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+
+    <!-- DIALOG FOR PWD -->
+    <v-dialog v-model="pwd_dialog" width="500">
+      <v-card id="my-card">
+        <v-card-title>PWD Details</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="pwd_details.pwd_id"
+            outlined
+            rounded
+            dense
+            block
+            label="ID Number"
+          ></v-text-field>
+          <v-text-field
+            v-model="pwd_details.last_name"
+            outlined
+            rounded
+            dense
+            block
+            label="Last Name"
+          ></v-text-field>
+          <v-text-field
+            rounded
+            dense
+            block
+            v-model="pwd_details.first_name"
+            label="First Name"
+            outlined
+          ></v-text-field>
+          <v-text-field
+            v-model="pwd_details.middle_name"
+            label="M.I"
+            outlined
+            rounded
+            dense
+          ></v-text-field>
+            <!-- BIRTHDATE -->
+
+            <v-menu
+        v-model="menu2"
+        :close-on-content-click="false"
+        :nudge-right="40"
+        transition="scale-transition"
+        offset-y
+        min-width="auto"
+      >
+        <template v-slot:activator="{ on, attrs }">
+          <v-text-field
+          rounded
+            v-model="birth_date"
+            label="Birth Date"
+            prepend-icon="mdi-calendar"
+            readonly
+            v-bind="attrs"
+            v-on="on"
+            @change="getAge()"
+          ></v-text-field>
+        </template>
+        <v-date-picker
+          v-model="birth_date"
+          @input="menu2 = false"
+        ></v-date-picker>
+      </v-menu>
+      <h2>Age:{{ getAge() }}</h2>
+      <br>
+          <v-select
+          v-model="pwd_details.sex"
+          outlined
+          dense
+          rounded
+          :items="['Male','Female']"
+          />
+        
+          <v-btn dense rounded block color="success" @click="savePwdDetails(pwd_details)">Save</v-btn>
+          <v-btn
+            class="mt-2"
+            dense
+            rounded
+            block
+            color="error"
+            @click="pwd_dialog = false"
+            >Cancel</v-btn
+          >
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -656,10 +682,21 @@ import Sales from "../functions/Sales"
 import Audits from "../functions/Audit"
 import getStore from "../functions/getStoreName"
 import Category from "../functions/Category"
+import PWD from "../functions/Pwd"
 // import printJS from "print-js";
 export default {
   data: () => {
     return {
+      minDate: new Date().toISOString().substr(0, 10) ,
+      birth_date: (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().substr(0, 10),
+      menu: false,
+      modal: false,
+      menu2: false,
+      pwd_details:{},
+      pwd_dialog:false,
+      applied_discount:0,
+      orginal_price:0,
+      store_name:"",
       nexSalesID:"",
       paperPrint: 0,  
       apiUrl: process.env.VUE_APP_API_URL,
@@ -763,6 +800,32 @@ export default {
     }, 1000));
     this.authorization = secret_key(this.$store.state.storedEmp.token);
     this.paperPrint = this.$store.state.printPaper;
+  },
+  savePwdDetails(val){
+    // console.log(val)
+    val.sales_id = this.nexSalesID
+    val.date = moment().format("YYYY-MM-DD HH:mm:ss")
+    PWD.addPwd(this.$store.state.storedEmp.token,val).then(()=>{
+      Swal.fire({
+        title: "Saved",
+        icon: "success",
+        timer: 2000,
+      })
+      this.pwd_dialog = false
+    })
+  },
+  getAge(){
+    const today = moment();
+    const birth = moment(this.birth_date); 
+    let ageToday = today.diff(birth, 'years') ;
+    this.pwd_details.birth_date = this.birth_date
+    this.pwd_details.age = ageToday
+    return ageToday ; 
+  },
+  openPwdDialog(){
+    this.pwd_dialog = true
+    this.pwd_details = {}
+    this.birth_date = (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().substr(0, 10)
   },
   searchItems(){
     if(!this.product_search){
@@ -892,6 +955,7 @@ export default {
               quantity: product.quantity,
               stock: product.stock,
               salesPrice: product.salesPrice,
+              discount_value:product.discount_value
             })),
             expanded: false,
           };
@@ -993,6 +1057,15 @@ export default {
       item.subtotal = item.salesPrice * item.quantity;
       this.total = this.products.reduce((acc, product) => acc + product.subtotal, 0);
     },
+   
+    //Total Discount Apply
+    appliedDiscount(){
+return this.applied_discount.toFixed(2)
+    },
+    //TOTAL SUB
+    subTotal(){
+      return this.orginal_price.toFixed(2);
+    },
     //TOTAL DISCOUNT
     totalDiscounted() {
       if (this.discounted) {
@@ -1010,7 +1083,8 @@ export default {
       if (this.change <= 0) {
         return 0;
       } else {
-        return this.cash - this.totalDiscounted();
+        let totalChange = this.cash - this.totalDiscounted()
+        return totalChange.toFixed(2);
       }
     },
     //ALL GET DATA
@@ -1019,11 +1093,15 @@ export default {
         Inventory.fetchPerProduct(this.$store.state.storedEmp.token,val)
           .then((res) => {
             let result_product = res.data[0];
+            console.log(result_product,"1031")
             result_product.discounted = false;
             // Check if the product already exists in this.products based on its ID
             // this.ifdiscount = this.products.some(
             // (product) => product.discount_id == null
             // );
+            this.orginal_price += result_product.salesPrice
+              console.log(this.orginal_price)
+            this.applied_discount += (result_product.salesPrice * result_product.discount_value) / 100;
             let existingProduct = this.products.find(
               (product) => product.productNumber === result_product.productNumber
             );
@@ -1039,6 +1117,8 @@ export default {
               result_product.quantity = 1; // Initialize quantity to 1
               result_product.stock--; // Decrease stock as it's being added
               // Check if the product has a discount
+             
+
               if (result_product.discount_id && result_product.discount_value) {
                 // Apply the discount to the sales price
                 result_product.salesPrice -=
@@ -1055,6 +1135,9 @@ export default {
               (acc, product) => acc + product.subtotal,
               0
             );
+     
+
+
             for (const item of this.products) {
               if (item.discounted === true) {
                 this.ifdiscount = true;
@@ -1110,6 +1193,7 @@ export default {
       // Void.addVoid(this.$store.state.storedEmp.token,void_items)
     },
     purchase() {
+      console.log(this.products,"1113")
       Inventory.updateProduct(this.$store.state.storedEmp.token,this.products)
         .then(() => {
           Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,this.epayment,this.cashpayment)
@@ -1133,6 +1217,9 @@ export default {
               }
             });
           this.receipt_dialog = true;
+          getStore.getStoreData(this.$store.state.storedEmp.token).then((res)=>{
+      this.store_name = res.data[0].store_name
+     })
           setTimeout(() => {
             this.generateBarcode();
           }, 500);

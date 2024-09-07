@@ -7,8 +7,24 @@
             clearable
             color="primary"
             dense
+            label="Category"
+            :items="list_of_category"
+            :item-text="
+              (elem) => {
+                return elem.categoryName;
+              }
+            "
+            item-value="categoryID"
+            v-model="category_id"
+            @change="filterItemByCategory()"
+          />
+                <v-autocomplete
+            outlined
+            clearable
+            color="primary"
+            dense
             label="Product"
-            :items="list_of_products"
+            :items="filter_of_products"
             :item-text="
               (elem) => {
                 return elem.productNumber + ' : ' + elem.item;
@@ -89,12 +105,15 @@
 import axios from "axios"
 import moment from "moment"
 import Swal from "sweetalert2";
+import Inventory from "../functions/Inventory"
 import secret_key from "../plugins/md5decrypt";
+import Category from "../functions/Category"
 
 export default {
     props:["insert_item","discount_price"],
  data: () => {
     return {
+      category_id:"",
       menu2: false,
       apiUrl: process.env.VUE_APP_API_URL,
       products_code:"",
@@ -109,6 +128,8 @@ export default {
       from_date: null,
       all_products: [],
       list_of_products: [],
+      filter_of_products:[],
+      list_of_category:[],
       low_products: false,
       filter_all: false,
       no_products: false,
@@ -130,14 +151,29 @@ export default {
     };
   },
   methods:{
+    filterItemByCategory(){
+      if(this.category_id === null){
+       this.filter_of_products = [...this.list_of_products]
+       console.log(this.filter_of_products,"157")
+      }
+      else{
+         this.filter_of_products =  this.filter_of_products.filter((rec)=>{
+        if (rec.categoryID == this.category_id){
+            return rec
+        }
+       })  
+      }
+    },
+    getAllCategory(){
+      Category.getCategory(this.$store.state.storedEmp.token).then((res)=>{
+        this.list_of_category = res.data.map((rec)=> rec)
+      })
+    },
      getAllProducts() {
-      axios.get(`${this.apiUrl}/inventory/api/getAllInvetory`,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      }).then((res) => {
-        this.list_of_products = res.data;
+      Inventory.getAllProducts(this.$store.state.storedEmp.token).then((res) => {
         console.log(res.data)
+        this.list_of_products = res.data;
+        this.filter_of_products = res.data
       });
     },
     insertInventory(val){
@@ -183,7 +219,9 @@ export default {
     }
   },
   mounted(){
+    
     this.getAllProducts()
+    this.getAllCategory()
   }
 }
 </script>

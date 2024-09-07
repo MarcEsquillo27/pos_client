@@ -249,6 +249,10 @@ export default {
           accessRights: { add: false, read: true, edit: false, delete: false },
         },
         {
+          drawerLink: "PWD",  
+          accessRights: { add: false, read: true, edit: false, delete: false }, 
+        },
+        {
           drawerLink: "Delivery",  
           accessRights: { add: false, read: true, edit: false, delete: false }, 
         },
@@ -444,6 +448,11 @@ export default {
           drawerLink: "POS",
           accessRights: { add: false, read: true, edit: false, delete: false },
         },
+        {
+          drawerLink: "PWD",  
+          accessRights: { add: false, read: true, edit: false, delete: false }, 
+        },
+        
         {
           drawerLink: "Delivery",  
           accessRights: { add: false, read: true, edit: false, delete: false }, 

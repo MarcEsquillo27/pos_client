@@ -60,10 +60,11 @@
 
 <script>
 import ItemDiscountDialog from "../components/ItemDiscountDialog.vue";
-import axios from "axios"
+import Inventory from "../functions/Inventory"
 import moment from "moment";
 import Swal from "sweetalert2";
-import secret_key from "../plugins/md5decrypt";
+import Audit from "../functions/Audit"
+
 export default {
   props: {
     list_of_discount_items: {
@@ -99,16 +100,11 @@ export default {
   methods: {
     removeDiscount(val){
       let toUpdate = {
-        discount_id: null,
+        discount_id:0,
         productNumber:val.productNumber,
         item:val.item
       }
- axios
-        .post(`${this.apiUrl}/inventory/api/updateInventory`, toUpdate,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      })
+      Inventory.updateInventory(this.$store.state.storedEmp.token,toUpdate)
         .then(() => {
           // this.all_products.push(this.insertItem);
           Swal.fire({
@@ -126,11 +122,7 @@ export default {
             date: moment().format("YYYY-MM-DD hh:mm:ss"),
             transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
-          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      }).then(()=>{
+           Audit.AddLogs(this.$store.state.storedEmp.token,audit_logs).then(()=>{
             location.reload()
           });
         })
@@ -147,9 +139,6 @@ export default {
     },
      
     
-  },
-  mounted() {
-    console.log('list_of_discount_items in child component:', this.list_of_discount_items);
   },
 };
 </script>

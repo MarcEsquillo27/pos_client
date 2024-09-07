@@ -12,6 +12,7 @@ import Category from '../views/Category.vue'
 import Discount from '../views/Discount.vue'
 import Account from '../views/Account.vue'
 import Voids from '../views/VoidLogs.vue'
+import PWD from '../views/PwdLogs.vue'
 // import NotFound from '../views/NotFound.vue'
 
 Vue.use(VueRouter)
@@ -19,6 +20,7 @@ Vue.use(VueRouter)
 const routes = [
   { path: '/', name: 'login', component: Login },
   { path: '/pos', name: 'pos', component: Pos },
+  { path: '/pwd', name: 'pos', component: PWD },
   { path: '/delivery', name: 'delivery', component: Delivery },
   { path: '/return', name: 'return', component: Return },
   { path: '/inventories', name: 'inventories', component: Inventories },
