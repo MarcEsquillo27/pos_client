@@ -13,6 +13,16 @@ addVoid(token,void_items){
               },
             })
     )
+  },
+  getVoid(token,first_date,second_date){
+    return Promise.resolve(
+      axios
+            .get(`${apiUrl}/void/api/getVoid/${first_date}/${second_date}`, {
+              headers: {
+                authorization: `Bearer ${secret_key(token)}`, // Assuming Bearer token
+              },
+            })
+    )
   }
 };
 

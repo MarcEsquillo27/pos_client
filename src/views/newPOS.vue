@@ -1128,7 +1128,8 @@ return this.applied_discount.toFixed(2)
               result_product.subtotal =
                 result_product.salesPrice * result_product.quantity; // Calculate subtotal
               result_product.editMode = false;
-
+              result_product.salesID = this.nexSalesID
+              result_product.transaction_by = this.$store.state.storedEmp.userdetails[0].fullname
               this.products.push(result_product);
             }
             this.total = this.products.reduce(
@@ -1170,7 +1171,7 @@ return this.applied_discount.toFixed(2)
       let confirmation = confirm("Are you sure you want to Void the transaction?");
       if (confirmation) {
         // let void_items = [];
-      Void.addVoid(this.$store.state.storedEmp.token,this.products).then(()=>{
+      Void.addVoid(this.$store.state.storedEmp.token,this.products,).then(()=>{
         Swal.fire({
   title: "Transaction Void",
   icon: "success"
@@ -1196,7 +1197,7 @@ return this.applied_discount.toFixed(2)
       console.log(this.products,"1113")
       Inventory.updateProduct(this.$store.state.storedEmp.token,this.products)
         .then(() => {
-          Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,this.epayment,this.cashpayment)
+          Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,this.epayment,this.cashpayment,this.products,this.nexSalesID)
             .then((res) => {
               this.salesInvoice = res.data[0];
             })

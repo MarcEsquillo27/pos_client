@@ -96,10 +96,10 @@
                 </template>
 
                 <template v-slot:item="{ item }">
-                  <tr>
-                    <td>{{ item.productNumber }}</td>
-                    <td>{{ item.item }}</td>
-                    <td>{{ dateDefault(item.date) }}</td>
+                  <tr @dblclick="getVoidData(item.salesID)">
+                    <td>{{dateDefault(item.date) }}</td>
+                    <td>{{ item.salesID }}</td>
+                    <td>{{ item.transaction_by }}</td>
                   </tr>
                 </template>
               </v-data-table>
@@ -111,7 +111,7 @@
     <!-- DIALOG FOR RETURN ITEMS -->
     <v-dialog v-model="return_dialog" width="40%">
       <v-card>
-        <v-card-title> View Item </v-card-title>
+        <v-card-title> View Logs </v-card-title>
         <v-card-text>
           <v-simple-table class="border">
             <thead>
@@ -123,15 +123,10 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(items, index) in saled_items" :key="index">
+              <tr v-for="(items, index) in filter_data" :key="index">
+                <td>{{ items.productNumber }}</td>
                 <td>{{ items.item }}</td>
-                <td>{{ items.salesPrice }}</td>
-                <td v-if="!items.editModeReturn">{{ items.quantity }}</td>
-                <td v-else>
-                  <v-text-field dense block type="number" v-model="items.quantity" />
-                  <v-btn x-small color="success" @click="saveChanges(items)">Save</v-btn>
-                </td>
-                <td>{{ items.total }}</td>
+                <td >{{ items.quantity }}</td>
                 <!-- <td v-if="!items.editModeReturn">
                     <v-icon color="primary" @click="items.editModeReturn = true"
                       >mdi-pencil</v-icon
@@ -161,6 +156,7 @@ import Excel from "exceljs";
 import { saveAs } from "file-saver";
 import moment from "moment";
 import secret_key from "../plugins/md5decrypt";
+import Void from "../functions/Void"
 
 // import _ from "lodash"
 export default {
@@ -174,27 +170,37 @@ export default {
       showDatePicker: false,
       from_date: null,
       all_products: [],
+      filter_products:[],
+      filter_data:[],
       saled_items: [],
       first_date_menu: false,
       second_date_menu: false,
       first_date: moment().subtract(1, "month").format("YYYY-MM-DD"),
       second_date: moment().format("YYYY-MM-DD"),
       headers: [
-        { text: "Product Number", value: "productNumber" },
-        { text: "Item", value: "item" },
-        { text: "Date", value: "date" },
+        { text: "Date", value: "productNumber" },
+        { text: "Sales Number", value: "item" },
+        { text: "Cashier Name", value: "date" },
         //   { text: "Action",sort:false },
         // Add more headers as needed
       ],
       headers_products: [
+      { text: "Product Number", value: "productNumber" },
         { text: "Item", value: "item" },
-        { text: "Price", value: "salesPrice" },
         { text: "Quantity", value: "quantity" },
-        { text: "Total", value: "total" },
       ],
     };
   },
   methods: {
+    getVoidData(data){
+      this.filter_data = []
+      this.return_dialog = true
+    this.filter_data = this.filter_products.filter((rec)=>{
+        if(data == rec.salesID){
+          return rec
+        }
+      })
+    },
     dateDefault(val) {
       return moment(val).format("YYYY-MM-DD hh:mm:ss");
     },
@@ -275,17 +281,36 @@ export default {
     },
 
     getAllProducts() {
-      axios
-        .get(`${this.apiUrl}/void/api/getVoid/${this.first_date}/${this.second_date}`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
+    Void.getVoid(this.$store.state.storedEmp.token, this.first_date, this.second_date)
         .then((res) => {
-          console.log(res.data);
-          this.all_products = res.data;
+            // Original data
+            this.filter_products = res.data
+            const products = res.data;
+
+            // Create a map to store unique salesID
+            const salesMap = {};
+
+            // Iterate over the products
+            products.forEach((product) => {
+                if (!salesMap[product.salesID]) {
+                    // If this salesID is not already in the map, add it
+                    salesMap[product.salesID] = {
+                        salesID: product.salesID,
+                        date: product.date,
+                        transaction_by: product.transaction_by
+                    };
+                }
+            });
+
+            // Convert the map to an array of unique sales
+            const uniqueSales = Object.values(salesMap);
+
+            // Now, `uniqueSales` will contain the filtered and grouped data
+            console.log(uniqueSales);
+            this.all_products = uniqueSales;
         });
-    },
+},
+
     toggleEditModeReturn(item) {
       console.log(item);
       item.editModeReturn = true;
