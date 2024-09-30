@@ -230,9 +230,13 @@
       </v-row>
     </v-container>
     <!-- FOR EPAYMENT -->
-    <v-dialog v-model="epayment_dialog" width="500">
+    <v-dialog v-model="epayment_dialog" persistent width="500">
       <v-card>
-        <v-card-title> E-payment </v-card-title>
+        <v-card-title> E-payment 
+          <v-spacer/>
+          <v-btn text @click="epayment_dialog=false, epayment=false"><span style="color:red">X</span>
+          </v-btn>
+        </v-card-title>
         <v-card-text>
           <v-select
             @change="modeOfPayment(mode_of_payment)"
@@ -243,13 +247,16 @@
             rounded
             label="Mode of Payment"
           />
+          <v-text-field label="Reference Number" v-model="reference_number"  dense
+            outlined
+            rounded></v-text-field>
           <img
-            v-if="qr_image == 'gcash'"
+            v-if="qr_image == 'gcash' && mode_of_payment"
             width="450"
             src="https://businessmaker-academy.com/cms/wp-content/uploads/2022/04/Gcash-BMA-QRcode-768x1024.jpg"
           />
           <img
-            v-else-if="qr_image == 'paymaya'"
+            v-else-if="qr_image == 'paymaya' && mode_of_payment"
             width="450"
             src="https://negosyohelp.paymaya.com/servlet/rtaImage?eid=ka02y000000gIkF&feoid=00N7F00000Sg9GO&refid=0EM2y00000213P7"
           />
@@ -260,29 +267,31 @@
             @click="purchase()"
             v-if="qr_image == 'gcash' || qr_image == 'paymaya'"
             dense
-            block
             rounded
             color="success"
-            >Void Transaction</v-btn
+            >Purchase</v-btn
           >
           <v-btn
             @click="purchase()"
             v-if="qr_image == 'gcash' || qr_image == 'paymaya'"
             dense
-            block
             rounded
-            color="success"
-            >Purchase</v-btn
+            color="error"
+            >Void Transaction</v-btn
           >
+        
 
           <v-btn v-else disabled dense block rounded color="success">Purchase</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
     <!-- CASH PAYMENT -->
-    <v-dialog v-model="cash_dialog" width="500">
+    <v-dialog v-model="cash_dialog" persistent width="500">
       <v-card>
-        <v-card-title> CASH </v-card-title>
+        <v-card-title> CASH 
+          <v-spacer/>
+          <v-btn text @click="cash_dialog=false, cashpayment=false"><span style="color:red">X</span></v-btn>
+        </v-card-title>
         <v-card-text>
           <v-row>
             <v-col cols="6"> Total </v-col>
@@ -687,6 +696,7 @@ import PWD from "../functions/Pwd"
 export default {
   data: () => {
     return {
+      reference_number:"",
       minDate: new Date().toISOString().substr(0, 10) ,
       birth_date: (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().substr(0, 10),
       menu: false,
@@ -1026,7 +1036,6 @@ export default {
       if (confirmation) {
         let void_items = [];
         void_items.push(item);
-        Void.addVoid(this.$store.state.storedEmp.token,void_items).then(() => {
             
             let get_index = this.products.indexOf(item);
         
@@ -1046,7 +1055,6 @@ export default {
             this.products_code = "";
             this.cash = 0;
             this.change = 0;
-          });
       }
     },
     toggleEditMode(item) {
@@ -1162,7 +1170,9 @@ return this.applied_discount.toFixed(2)
     },
     // ALL @CLICK FUNCTION
     electronicPayment() {
+      this.mode_of_payment = null
       this.epayment_dialog = true;
+
     },
     cashPayment() {
       this.cash_dialog = true;
@@ -1185,7 +1195,7 @@ return this.applied_discount.toFixed(2)
             this.epayment_dialog = false;
             this.cashpayment = false;
             this.epayment =false;
-
+        window.location.reload()
 
       })
 
@@ -1194,10 +1204,19 @@ return this.applied_discount.toFixed(2)
       // Void.addVoid(this.$store.state.storedEmp.token,void_items)
     },
     purchase() {
-      console.log(this.products,"1113")
+      if(this.epayment){
+        if(!this.reference_number){
+          Swal.fire({
+        title: "Please complete the details",
+        icon: "warning",
+        timer: 2000,
+      })
+      return false
+        }
+      }
       Inventory.updateProduct(this.$store.state.storedEmp.token,this.products)
         .then(() => {
-          Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,this.epayment,this.cashpayment,this.products,this.nexSalesID)
+          Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,this.epayment,this.cashpayment,this.products,this.nexSalesID,this.reference_number)
             .then((res) => {
               this.salesInvoice = res.data[0];
             })

@@ -98,6 +98,8 @@
                 <template v-slot:item="{ item }">
                   <tr>
                     <td>{{ item.salesID }}</td>
+                    <td>{{ item.reference_number?item.reference_number:'No reference number' }}</td>
+                    <td>{{ item.mode_payment}}</td>
                     <td>{{ item.item_count }}</td>
                     <td>{{ item.total_sum }}</td>
                     <td>
@@ -236,6 +238,8 @@ export default {
       second_date: moment().format("YYYY-MM-DD"),
       headers: [
         { text: "Sales ID", value: "salesID" },
+        {text:"Reference Number", value:"reference_number"},
+        {text:"Mode of payment", value:"mode_payment"},
         { text: "Item Count", value: "item_count" },
         { text: "Total Sum", value: "total_sum" },
         { text: "Action", sort: false },
@@ -407,17 +411,19 @@ export default {
     // },
 
     getAllProducts() {
-      axios
-        .get(`${this.apiUrl}/sales/api/getSales/${this.first_date}/${this.second_date}`, {
-          headers: {
-            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-        })
-        .then((res) => {
-          console.log(res.data);
-          this.all_products = res.data;
-        });
-    },
+  axios
+    .get(`${this.apiUrl}/sales/api/getSales/${this.first_date}/${this.second_date}`, {
+      headers: {
+        authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+      },
+    })
+    .then((res) => {
+ 
+      this.all_products = res.data
+      
+    });
+},
+
     toggleEditModeReturn(item) {
       console.log(item);
       item.editModeReturn = true;
