@@ -100,6 +100,7 @@
                     <td>{{dateDefault(item.date) }}</td>
                     <td>{{ item.salesID }}</td>
                     <td>{{ item.transaction_by }}</td>
+                    <td>{{ item.mode_of_payment }}</td>
                   </tr>
                 </template>
               </v-data-table>
@@ -181,6 +182,7 @@ export default {
         { text: "Date", value: "productNumber" },
         { text: "Sales Number", value: "item" },
         { text: "Cashier Name", value: "date" },
+        { text: "Mode of Payment", value: "mode_of_payment" },
         //   { text: "Action",sort:false },
         // Add more headers as needed
       ],
@@ -297,7 +299,8 @@ export default {
                     salesMap[product.salesID] = {
                         salesID: product.salesID,
                         date: product.date,
-                        transaction_by: product.transaction_by
+                        transaction_by: product.transaction_by,
+                        mode_of_payment: product.mode_of_payment
                     };
                 }
             });

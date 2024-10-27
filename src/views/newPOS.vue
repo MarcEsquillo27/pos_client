@@ -249,7 +249,8 @@
           />
           <v-text-field label="Reference Number" v-model="reference_number"  dense
             outlined
-            rounded></v-text-field>
+            rounded
+            @keypress="checkInput"></v-text-field>
           <img
             v-if="qr_image == 'gcash' && mode_of_payment"
             width="450"
@@ -262,7 +263,6 @@
           />
           <h1 v-else>No QR Displayed yet</h1>
         </v-card-text>
-        <v-card-actions>
           <v-btn
             @click="purchase()"
             v-if="qr_image == 'gcash' || qr_image == 'paymaya'"
@@ -270,19 +270,18 @@
             rounded
             color="success"
             >Purchase</v-btn
-          >
+          >      
+          <v-btn v-else disabled dense block rounded color="success">Purchase</v-btn>
+<br>
           <v-btn
-            @click="purchase()"
-            v-if="qr_image == 'gcash' || qr_image == 'paymaya'"
+            @click="voidTransaction()"
             dense
+            block
             rounded
             color="error"
             >Void Transaction</v-btn
           >
-        
-
-          <v-btn v-else disabled dense block rounded color="success">Purchase</v-btn>
-        </v-card-actions>
+       
       </v-card>
     </v-dialog>
     <!-- CASH PAYMENT -->
@@ -800,6 +799,13 @@ export default {
     // },
   },
   methods: {
+    checkInput(event) {
+      const charCode = event.charCode ? event.charCode : event.keyCode;
+      // Allow only digits (0-9) and control keys (e.g., backspace)
+      if (charCode < 48 || charCode > 57) {
+        event.preventDefault();
+      }
+    },
     async initializeApp() {
     await this.getLatestSalesID();
     await this.fetchProducts();
@@ -1181,7 +1187,7 @@ return this.applied_discount.toFixed(2)
       let confirmation = confirm("Are you sure you want to Void the transaction?");
       if (confirmation) {
         // let void_items = [];
-      Void.addVoid(this.$store.state.storedEmp.token,this.products,).then(()=>{
+      Void.addVoid(this.$store.state.storedEmp.token,this.products,this.epayment,this.cashpayment).then(()=>{
         Swal.fire({
   title: "Transaction Void",
   icon: "success"
@@ -1410,4 +1416,5 @@ th {
 .sizeFont {
   font-size: 15px;
 }
+
 </style>
