@@ -247,10 +247,17 @@
             rounded
             label="Mode of Payment"
           />
+            <h1>Total:{{ totalDiscounted() }} PHP</h1>  
+            <br>
           <v-text-field label="Reference Number" v-model="reference_number"  dense
             outlined
             rounded
             @keypress="checkInput"></v-text-field>
+            <v-text-field label="Amount" v-model="cash"
+            dense
+            outlined
+            rounded
+            @change="exactAmountOnly()"></v-text-field>
           <img
             v-if="qr_image == 'gcash' && mode_of_payment"
             width="450"
@@ -267,6 +274,7 @@
             @click="purchase()"
             v-if="qr_image == 'gcash' || qr_image == 'paymaya'"
             dense
+            block
             rounded
             color="success"
             >Purchase</v-btn
@@ -289,7 +297,7 @@
       <v-card>
         <v-card-title> CASH 
           <v-spacer/>
-          <v-btn text @click="cash_dialog=false, cashpayment=false"><span style="color:red">X</span></v-btn>
+          <v-btn text @click="cash_dialog=false, cashpayment=false,cash=0"><span style="color:red">X</span></v-btn>
         </v-card-title>
         <v-card-text>
           <v-row>
@@ -695,6 +703,7 @@ import PWD from "../functions/Pwd"
 export default {
   data: () => {
     return {
+      e_amount:"",
       reference_number:"",
       minDate: new Date().toISOString().substr(0, 10) ,
       birth_date: (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().substr(0, 10),
@@ -799,6 +808,9 @@ export default {
     // },
   },
   methods: {
+    exactAmountOnly(){
+      if(this.cash != this.totalDiscounted()){alert(`Exact amount only`)}
+    },
     checkInput(event) {
       const charCode = event.charCode ? event.charCode : event.keyCode;
       // Allow only digits (0-9) and control keys (e.g., backspace)
@@ -1222,7 +1234,13 @@ return this.applied_discount.toFixed(2)
       }
       Inventory.updateProduct(this.$store.state.storedEmp.token,this.products)
         .then(() => {
-          Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,this.epayment,this.cashpayment,this.products,this.nexSalesID,this.reference_number)
+          Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,
+          this.epayment,
+          this.cashpayment,
+          this.products,
+          this.reference_number,
+          this.cash
+        )
             .then((res) => {
               this.salesInvoice = res.data[0];
             })

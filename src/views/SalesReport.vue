@@ -9,64 +9,59 @@
         <v-col>
           <!-- FROM DATE -->
           <v-menu
-            ref="menu"
-            v-model="first_date_menu"
-            :close-on-content-click="false"
-            :return-value.sync="date"
-            transition="scale-transition"
-            offset-y
-            min-width="auto"
-          >
-            <template v-slot:activator="{ on, attrs }">
-              <v-text-field
-                v-model="first_date"
-                label="From Date"
-                prepend-icon="mdi-calendar"
+        v-model="first_date_menu"
+        :close-on-content-click="false"
+        :nudge-right="40"
+        transition="scale-transition"
+        offset-y
+        min-width="auto"
+      >
+        <template v-slot:activator="{ on, attrs }">
+          <v-text-field
+            v-model="first_date"
+            prepend-icon="mdi-calendar"
                 readonly
                 dense
                 rounded
                 outlined
-                v-bind="attrs"
-                v-on="on"
-              ></v-text-field>
-            </template>
-            <v-date-picker v-model="first_date" no-title scrollable>
-              <v-spacer></v-spacer>
-              <v-btn text color="primary" @click="menu = false"> Cancel </v-btn>
-              <v-btn text color="primary" @click="$refs.menu.save(date)"> OK </v-btn>
-            </v-date-picker>
-          </v-menu>
+            label="From Date"
+            v-bind="attrs"
+            v-on="on"
+          ></v-text-field>
+        </template>
+        <v-date-picker
+          v-model="first_date"
+          @input="menu2 = false"
+        ></v-date-picker>
+      </v-menu>
         </v-col>
         <v-col>
           <!-- TO DATE -->
           <v-menu
-            ref="menu"
-            v-model="second_date_menu"
-            :close-on-content-click="false"
-            :return-value.sync="date"
-            transition="scale-transition"
-            offset-y
-            min-width="auto"
-          >
-            <template v-slot:activator="{ on, attrs }">
-              <v-text-field
-                v-model="second_date"
-                label="To Date"
-                prepend-icon="mdi-calendar"
-                readonly
-                dense
+        v-model="second_date_menu"
+        :close-on-content-click="false"
+        :nudge-right="40"
+        transition="scale-transition"
+        offset-y
+        min-width="auto"
+      >
+        <template v-slot:activator="{ on, attrs }">
+          <v-text-field
+            v-model="second_date"
+            label="To Date"
+            prepend-icon="mdi-calendar"
+            dense
                 rounded
                 outlined
-                v-bind="attrs"
-                v-on="on"
-              ></v-text-field>
-            </template>
-            <v-date-picker v-model="second_date" no-title scrollable>
-              <v-spacer></v-spacer>
-              <v-btn text color="primary" @click="menu = false"> Cancel </v-btn>
-              <v-btn text color="primary" @click="$refs.menu.save(date)"> OK </v-btn>
-            </v-date-picker>
-          </v-menu>
+            v-bind="attrs"
+            v-on="on"
+          ></v-text-field>
+        </template>
+        <v-date-picker
+          v-model="second_date"
+          @input="menu2 = false"
+        ></v-date-picker>
+      </v-menu>
         </v-col>
         <v-col>
           <v-btn @click="filterDate()" color="primary"> Filter Date </v-btn>
