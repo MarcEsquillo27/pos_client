@@ -257,6 +257,7 @@
             dense
             outlined
             rounded
+             @keypress="blockInvalidCharacters"
             @change="exactAmountOnly()"></v-text-field>
           <img
             v-if="qr_image == 'gcash' && mode_of_payment"
@@ -272,7 +273,7 @@
         </v-card-text>
           <v-btn
             @click="purchase()"
-            v-if="qr_image == 'gcash' || qr_image == 'paymaya'"
+            v-if="qr_image == 'gcash' || qr_image == 'paymaya' && cash == totalDiscounted()"
             dense
             block
             rounded
@@ -455,7 +456,7 @@
 
           <div>
             <div>
-              <v-btn @click="printReceipt()">Print</v-btn>
+              <v-btn block @click="printReceipt()">Print</v-btn>
             </div>
           </div>
         </div>
@@ -568,9 +569,9 @@
                   @click.native="togglePanel(i)"
                 >
                   <v-expansion-panel-header>
+                    {{ item.name }}
                   </v-expansion-panel-header>
-                  <v-expansion-panel-content v-if="item.expanded">
-                    {{ item.children }}
+                  <v-expansion-panel-content>
                     <v-data-table
                       :headers="headers"
                       :items="item.children"
@@ -703,6 +704,7 @@ import PWD from "../functions/Pwd"
 export default {
   data: () => {
     return {
+      counter: 1,
       e_amount:"",
       reference_number:"",
       minDate: new Date().toISOString().substr(0, 10) ,
@@ -808,8 +810,33 @@ export default {
     // },
   },
   methods: {
+    blockInvalidCharacters(event) {
+      // Allow only numbers (0-9) and a single dot (.)
+      const char = String.fromCharCode(event.keyCode || event.which);
+      const currentValue = event.target.value;
+
+      // Block if not a number or dot
+      if (!/[0-9.]/.test(char)) {
+        event.preventDefault();
+      }
+
+      // Prevent multiple dots
+      if (char === '.' && currentValue.includes('.')) {
+        event.preventDefault();
+      }
+    },
     exactAmountOnly(){
-      if(this.cash != this.totalDiscounted()){alert(`Exact amount only`)}
+      if (this.cash) {
+        // Ensure it's a number and format to 2 decimal places
+        const numericValue = parseFloat(this.cash);
+        if (!isNaN(numericValue)) {
+          this.cash = numericValue.toFixed(2); // Format with .00
+          if(this.cash != this.totalDiscounted()){alert(`Exact amount only`)}
+        } else {
+          this.cash = ""; // Clear if the input is invalid
+        }
+        
+      }
     },
     checkInput(event) {
       const charCode = event.charCode ? event.charCode : event.keyCode;
@@ -1239,7 +1266,8 @@ return this.applied_discount.toFixed(2)
           this.cashpayment,
           this.products,
           this.reference_number,
-          this.cash
+          this.cash,
+          this.nexSalesID
         )
             .then((res) => {
               this.salesInvoice = res.data[0];
@@ -1267,6 +1295,8 @@ return this.applied_discount.toFixed(2)
           setTimeout(() => {
             this.generateBarcode();
           }, 500);
+          this.$store.dispatch('generateSalesID');
+
         })
         .catch((err) => {
           alert(err);
@@ -1369,16 +1399,11 @@ return this.applied_discount.toFixed(2)
         });
     },
     getLatestSalesID(){
-      Sales.getLatestSalesID(this.$store.state.storedEmp.token)
-        .then((res) => {
-          this.nexSalesID = res.data[0].predicted_next_id
-          // this.list_of_category = res.data;
-        })
-        .catch((error) => {
-          console.error("Error fetching categories:", error);
-          // Handle unauthorized error here (e.g., display message to user)
-        });
-    }
+
+      this.nexSalesID = this.$store.state.salesID;
+     
+
+    } 
   },
   created(){
     if(this.$store.state.printPaper  <= 100){

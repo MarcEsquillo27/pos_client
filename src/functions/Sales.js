@@ -4,11 +4,12 @@ import secret_key from "../plugins/md5decrypt";
 let apiUrl = process.env.VUE_APP_API_URL
 const httpRequest = {
 // GET INVENTORY
-AddSales(token,fullname,epayment,cashpayment,products,reference_number,cash){
+AddSales(token,fullname,epayment,cashpayment,products,reference_number,cash,nexSalesID){
   let data ={
    products: products,
    reference_number: reference_number,
-   pay_amount: cash
+   pay_amount: cash,
+   nexSalesID:nexSalesID
   }
     return Promise.resolve(
         axios

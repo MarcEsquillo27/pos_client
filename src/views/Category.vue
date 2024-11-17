@@ -52,6 +52,12 @@
                     @click="editInventory(items)"
                     >mdi-pencil</v-icon
                   >
+                  <v-icon
+                    :style="hasAccess('Category', 'delete') ? '' : 'display:none;'"
+                    color="error"
+                    @click="deleteCategory(items)"
+                    >mdi-delete</v-icon
+                  >
                 </td>
               </tr>
             </tbody>
@@ -256,6 +262,21 @@ export default {
       totalCapital = val.salesPrice - val.originalPrice;
       //  totalCapital = val.salesPrice - val.originalPrice
       return !totalCapital ? 0 : totalCapital;
+    },
+    deleteCategory(val){
+      let confirmation = confirm("Are you sure you want to delete?");
+      if (confirmation) {
+        axios
+        .post(`${this.apiUrl}/category/api/deleteCategory/${val.id}`, {
+          headers: {
+            authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
+          },
+        })
+        alert("Delete Successfully")
+        location.reload();
+
+      }
+   
     },
     editInventory(val) {
       this.addButton = false;
