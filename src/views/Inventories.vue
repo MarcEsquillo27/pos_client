@@ -4,7 +4,7 @@
       <h1>Inventories</h1>
       <v-row>
         <v-col cols="12" sm="6">
-          <v-text-field outlined rounded color="primary" dense label="Search" />
+          <v-text-field v-model="search" outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="6" sm="3" class="text-right">
           <v-btn
@@ -68,65 +68,79 @@
 
       <v-row>
         <v-col cols="12">
-          <v-simple-table class="border">
-            <thead>
-              <tr style="background-color: #1976d2">
-                <th style="color: white" v-for="(items, index) in headers" :key="index">
-                  {{ items.text }}
-                </th>
-                <th style="color: white" colspan="2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                :style="
-                  items.stock == 0
-                    ? 'background-color:#FFBB64;'
-                    : items.stock <= 5
-                    ? 'background-color:#CE4257;color:white;'
-                    : ''
-                "
-                v-for="(items, index) in InventoriesProduct"
-                :key="index"
-              >
-                <td>{{ items.productNumber }}</td>
-                <td>{{ items.item }}</td>
-                <td>{{ items.unit }}</td>
-                <td>{{ items.brand }}</td>
-                <td>{{ items.categoryName }}</td>
-                <td>{{ items.description }}</td>
-                <td>
-                  <span :class="items.stock == 0 ? 'blink' : ''">{{
-                    items.stock == 0 ? "OUT OF STOCK" : items.stock
-                  }}</span>
-                </td>
-                <td>{{ items.discount }}%</td>
-                <td>&#8369; {{ items.originalPrice }}</td>
-                <td>&#8369; {{ items.salesPrice }}</td>
-                <td>&#8369; {{ totalPrice(items) }}</td>
+  <v-data-table
+    :headers="headers"
+    :items="InventoriesProduct"
+    :items-per-page="10"
+    :search="search"
+    class="elevation-1"
+    dense
+  >
+  <template v-slot:header>
+    <thead>
+      <tr>
+        <th
+          v-for="column in headers"
+          :key="column.value"
+          :style="{
+            backgroundColor: '#1976D2',  // Default background color for all headers
+            color: '#fff',  // White text for contrast
+            padding: '10px',  // Adjust padding as needed
+          }"
+        >
+          {{ column.text }}
+        </th>
+      </tr>
+    </thead>
+  </template>
+    <!-- Custom Row Rendering with v-slot -->
+    <template v-slot:item="{ item }">
+      <tr
+       :style="item.stock === 0? 'background-color: #CE4257':'' 
+       || item.stock <= 5? 'background-color: #FFBB64':''" 
+      >
+        <td>{{ item.productNumber }}</td>
+        <td>{{ item.item }}</td>
+        <td>{{ item.unit }}</td>
+        <td>{{ item.brand }}</td>
+        <td>{{ item.categoryName }}</td>
+        <td>{{ item.description }}</td>
+        <td>
+          <span :class="item.stock === 0 ? 'blink' : ''">
+            {{ item.stock === 0 ? 'OUT OF STOCK' : item.stock }}
+          </span>
+        </td>
+        <td>{{ item.discount }}%</td>
+        <td>&#8369; {{ item.originalPrice }}</td>
+        <td>&#8369; {{ item.salesPrice }}</td>
+        <td>&#8369; {{ totalPrice(item) }}</td>
+        <td>
+          <v-icon
+            :style="hasAccess('Inventories', 'edit') ? '' : 'display:none;'"
+            color="primary"
+            @click="editInventory(item)"
+          >
+            mdi-pencil
+          </v-icon>
+        </td>
+      </tr>
+    </template>
+ 
+  </v-data-table>
+</v-col>
 
-                <td>
-                  <v-icon
-                    :style="hasAccess('Inventories', 'edit') ? '' : 'display:none;'"
-                    color="primary"
-                    @click="editInventory(items)"
-                    >mdi-pencil</v-icon
-                  >
-                </td>
-              </tr>
-            </tbody>
-          </v-simple-table>
-        </v-col>
+
       </v-row>
-      <v-row
+      <!-- <v-row
         ><v-col>
           <v-pagination
+            style="padding-bottom: 30px;"
             v-model="currentPage"
             :length="totalPages"
             :total-visible="5"
             color="primary"
           /> </v-col
-      ></v-row>
+      ></v-row> -->
       <v-dialog v-model="add_dialog" width="40%">
         <v-card>
           <v-card-title> {{ editButton?'Update':'Add' }} Item </v-card-title>
@@ -243,8 +257,8 @@
       <v-row>
         <v-col>
           Legends: <v-icon style="color: white">mdi-square</v-icon> - Active Stock
-          <v-icon style="color: #ce4257">mdi-square</v-icon> - Low Stock
-          <v-icon style="color: #ffbb64">mdi-square</v-icon> - Out of Stock
+          <v-icon style="color: #FFBB64">mdi-square</v-icon> - Low Stock
+          <v-icon style="color: #CE4257">mdi-square</v-icon> - Out of Stock
         </v-col>
       </v-row>
     </v-footer>
@@ -301,14 +315,11 @@ export default {
         { text: "Orignal Price", value: "originalPrice" },
         { text: "Sales Price", value: "salesPrice" },
         { text: "Total", value: "total" },
+        { text: 'Actions', value: 'actions', sortable: false },
       ],
     };
   },
-  watch: {
-    currentPage() {
-      this.fetchProducts();
-    },
-  },
+
   computed: {
     numPages() {
       return Math.ceil(this.InventoriesProduct.length / this.itemsPerPage);
@@ -325,6 +336,7 @@ export default {
     },
   },
   methods: {
+    
     extractionData() {
       console.log(this.all_);
       const firstProcess = () => {
@@ -523,12 +535,10 @@ export default {
       this.insertItem = {};
     },
     fetchProducts() {
-      Inventory.fetchProducts(this.$store.state.storedEmp.token,this.currentPage,this.itemsPerPage)
+      Inventory.getAllProducts(this.$store.state.storedEmp.token)
         .then((res) => {
           const data = res.data;
-          this.all_products = data.products;
-          console.log(data.products);
-          this.totalPages = Math.ceil(data.totalItems / this.itemsPerPage);
+          this.all_products = data;
         });
     },
     updateInventory(val) {
@@ -653,6 +663,13 @@ export default {
 .no-padding {
   background-color: #1976d2;
   color: white;
+}
+.out-of-stock {
+  background-color: #CE4257;
+}
+
+.low-stock {
+  background-color: #FFBB64;
 }
 .footer {
   position: fixed;

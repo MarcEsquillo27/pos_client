@@ -4,7 +4,7 @@
       <h1>Category</h1>
       <v-row>
         <v-col cols="12" sm="6">
-          <v-text-field outlined rounded color="primary" dense label="Search" />
+          <v-text-field v-model="search" outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="12" sm="6" class="text-right">
           <v-btn
@@ -21,57 +21,34 @@
 
       <v-row>
         <v-col cols="12">
-          <v-simple-table class="border">
-            <thead>
-              <tr style="background-color: #1976d2">
-                <th style="color: white" v-for="(items, index) in headers" :key="index">
-                  {{ items.text }}
-                </th>
-                <th style="color: white" colspan="2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                :style="
-                  items.stock == 0
-                    ? 'background-color:#FFBB64;'
-                    : items.stock <= 5
-                    ? 'background-color:#CE4257;color:white;'
-                    : ''
-                "
-                v-for="(items, index) in paginatedItems"
-                :key="index"
-              >
-                <td>{{ items.categoryName }}</td>
-                <td>{{ items.description }}</td>
-                <td>{{ formatdate(items.date) }}</td>
-                <td>
-                  <v-icon
-                    :style="hasAccess('Category', 'edit') ? '' : 'display:none;'"
-                    color="primary"
-                    @click="editInventory(items)"
-                    >mdi-pencil</v-icon
-                  >
-                  <v-icon
-                    :style="hasAccess('Category', 'delete') ? '' : 'display:none;'"
-                    color="error"
-                    @click="deleteCategory(items)"
-                    >mdi-delete</v-icon
-                  >
-                </td>
-              </tr>
-            </tbody>
-          </v-simple-table>
+          <v-data-table
+    :headers="headers"
+    :items="all_products"
+    :items-per-page="5"
+    class="elevation-1"
+    :search="search"
+  >
+  <template v-slot:item="{ item }">
+      <tr>
+        <td>{{ item.categoryName }}</td>
+        <td>{{ item.description }}</td>
+        <td>{{ formatdate(item.date) }}</td>
+        <td>
+          <v-icon
+            :style="hasAccess('Category', 'edit') ? '' : 'display:none;'"
+            color="primary"
+            @click="editInventory(item)"
+          >
+            mdi-pencil
+          </v-icon>
+        </td>
+      </tr>
+    </template>
+</v-data-table>
+
+
         </v-col>
       </v-row>
-      <v-row
-        ><v-col>
-          <v-pagination
-            v-model="currentPage"
-            :length="numPages"
-            @input="changePage"
-          /> </v-col
-      ></v-row>
       <v-dialog v-model="add_dialog" width="40%">
         <v-card>
           <v-card-title> Add Category </v-card-title>
@@ -142,6 +119,7 @@ import secret_key from "../plugins/md5decrypt";
 export default {
   data: () => {
     return {
+      search:"",
       apiUrl: process.env.VUE_APP_API_URL,
       currentPage: 1, // Current page number
       itemsPerPage: 5, // Number of items per page
@@ -162,7 +140,7 @@ export default {
       headers: [
         { text: "Name", value: "categoryName" },
         { text: "Description", value: "description" },
-        { text: "Date ", value: "Date" },
+        { text: "Date ", value: "date" },
       ],
     };
   },
@@ -299,6 +277,7 @@ export default {
           },
         })
         .then((res) => {
+          console.log(res.data)
           this.all_products = res.data;
         });
     },

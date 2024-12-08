@@ -558,7 +558,7 @@ export default {
         });
     },
     insertInventory() {
-      if(!this.insertItem.fullname || !this.insertItem.username || !this.insertItem.password || !this.insertItem.openAccess){
+      if(!this.insertItem.fullname || !this.insertItem.username || !this.insertItem.password){
         Swal.fire("Please complete the details", "", "error");
         return false
       }
@@ -574,7 +574,6 @@ export default {
         })
         .then(() => {
           this.all_products.push(this.insertItem);
-          alert("NEW ITEM ADDED");
           this.add_dialog = false;
 
           let audit_logs = {

@@ -4,7 +4,7 @@
       <h1>Sales Report<v-icon>mdi-cash</v-icon></h1>
       <v-row>
         <v-col cols="6" sm="6">
-          <v-text-field outlined rounded color="primary" dense label="Search" />
+          <v-text-field v-model="search" outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col>
           <!-- FROM DATE -->
@@ -80,6 +80,7 @@
                 :headers="headers"
                 :items="all_products"
                 item-key="salesID"
+                :search="search"
                 dense
               >
                 <template v-slot:top>
@@ -217,6 +218,7 @@ import secret_key from "../plugins/md5decrypt";
 export default {
   data: () => {
     return {
+      search:"",
       total: "",
       salesInvoice: "",
       apiUrl: process.env.VUE_APP_API_URL,

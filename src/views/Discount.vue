@@ -4,7 +4,7 @@
       <h1>Discount</h1>
       <v-row>
         <v-col cols="12" sm="6">
-          <v-text-field outlined rounded color="primary" dense label="Search" />
+          <v-text-field v-model="search" outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col cols="12" sm="6" class="text-right">
           <v-btn :style="hasAccess('Discount','add')?'':'display:none;'" @click="openDialog()" rounded color="primary" dense
@@ -14,7 +14,10 @@
         </v-col>
       </v-row>
          <v-row justify="center" >
-        <v-col cols="12" md="4" v-for="(items, index) in all_products" :key="index">
+          <div v-if="searchFunction.length === 0">
+  No Discount available.
+</div>
+  <v-col  cols="12" md="4" v-for="(items, index) in searchFunction" :key="index">
           <v-card elevation-24 @click="tableDiscount(items.id)">
            
             <v-card-title class="justify-center"
@@ -29,6 +32,7 @@
 
           </v-col
         >
+
       </v-row>
   <!-- DISCOUNT LIST -->
   <v-dialog v-model="list_dialog" fullscreen round>
@@ -103,6 +107,7 @@ export default {
     },
   data: () => {
     return {
+      search:"",
       apiUrl: process.env.VUE_APP_API_URL,
       menu2: false,
       date2: moment().format("YYYY-MM-DD"),
@@ -137,8 +142,16 @@ export default {
     };
   },
   computed: {
- 
+    searchFunction() {
+    if (!this.search) {
+      return this.all_products;
+    }
+    return this.all_products.filter((item) =>
+      item.discount_name.toUpperCase().includes(this.search.toUpperCase())
+    );
+  }
   },
+
   methods: {
     DeleteDiscount(val){
        Swal.fire({

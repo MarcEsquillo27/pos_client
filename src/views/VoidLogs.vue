@@ -4,7 +4,7 @@
       <h1>Void Logs<v-icon>mdi-delete</v-icon></h1>
       <v-row>
         <v-col cols="6" sm="6">
-          <v-text-field outlined rounded color="primary" dense label="Search" />
+          <v-text-field v-model="search" outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col>
           <!-- FROM DATE -->
@@ -86,6 +86,7 @@
                 :items="all_products"
                 item-key="salesID"
                 dense
+                :search="search"
               >
                 <template v-slot:top>
                   <v-toolbar flat>
@@ -164,7 +165,7 @@ export default {
   data: () => {
     return {
       apiUrl: process.env.VUE_APP_API_URL,
-
+      search:"",
       sales_extracted: [],
       editModeReturn: false,
       return_dialog: false,

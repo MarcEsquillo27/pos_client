@@ -2,7 +2,7 @@
   <div>
     <v-container fluid>
       <h1>Point of Sale <v-icon>mdi-point-of-sale</v-icon></h1> 
-      Current SalesID: {{ nexSalesID  }}
+      Current SalesID: {{  this.nexSalesID  }}
       
      
       <v-row>
@@ -57,12 +57,6 @@
               </v-container>
               <br />
               <hr />
-              <!-- <v-row>
-                <v-col cols="6"> Total </v-col>
-                <v-col cols="6">
-                  {{ totalDiscounted() }}
-                </v-col>
-              </v-row> -->
               <v-row justify="end">
                 <v-col
                   ><v-checkbox
@@ -597,7 +591,7 @@
     </v-dialog>
 
     <!-- DIALOG FOR PWD -->
-    <v-dialog v-model="pwd_dialog" width="500">
+    <v-dialog v-model="pwd_dialog" width="500" persistent>
       <v-card id="my-card">
         <v-card-title>PWD Details</v-card-title>
         <v-card-text>
@@ -676,7 +670,7 @@
             rounded
             block
             color="error"
-            @click="pwd_dialog = false"
+            @click="closePWDDialog()"
             >Cancel</v-btn
           >
         </v-card-text>
@@ -704,6 +698,7 @@ import PWD from "../functions/Pwd"
 export default {
   data: () => {
     return {
+      displaySalesId:"",
       counter: 1,
       e_amount:"",
       reference_number:"",
@@ -810,6 +805,10 @@ export default {
     // },
   },
   methods: {
+    closePWDDialog(){
+      this.pwd_dialog = false
+      this.discounted = false
+    },
     blockInvalidCharacters(event) {
       // Allow only numbers (0-9) and a single dot (.)
       const char = String.fromCharCode(event.keyCode || event.which);
@@ -1142,77 +1141,98 @@ return this.applied_discount.toFixed(2)
     },
     //ALL GET DATA
     getProducts(val) {
-      if (val) {
-        Inventory.fetchPerProduct(this.$store.state.storedEmp.token,val)
-          .then((res) => {
-            let result_product = res.data[0];
-            console.log(result_product,"1031")
-            result_product.discounted = false;
-            // Check if the product already exists in this.products based on its ID
-            // this.ifdiscount = this.products.some(
-            // (product) => product.discount_id == null
-            // );
-            this.orginal_price += result_product.salesPrice
-              console.log(this.orginal_price)
-            this.applied_discount += (result_product.salesPrice * result_product.discount_value) / 100;
-            let existingProduct = this.products.find(
-              (product) => product.productNumber === result_product.productNumber
-            );
+  if (val) {
+    // Find the product in the local `this.products` array
+    let existingProduct = this.products.find(
+      (product) => product.productNumber === val
+    );
 
-            if (existingProduct) {
-              // If the product exists, update its quantity, subtotal, and stock
-              existingProduct.quantity++;
-              existingProduct.stock--;
-              existingProduct.subtotal =
-                existingProduct.salesPrice * existingProduct.quantity;
-            } else {
-              // If the product doesn't exist, add it to this.products array
-              result_product.quantity = 1; // Initialize quantity to 1
-              result_product.stock--; // Decrease stock as it's being added
-              // Check if the product has a discount
-             
-
-              if (result_product.discount_id && result_product.discount_value) {
-                // Apply the discount to the sales price
-                result_product.salesPrice -=
-                  (result_product.salesPrice * result_product.discount_value) / 100;
-                result_product.discounted = true;
-              }
-              result_product.subtotal =
-                result_product.salesPrice * result_product.quantity; // Calculate subtotal
-              result_product.editMode = false;
-              result_product.salesID = this.nexSalesID
-              result_product.transaction_by = this.$store.state.storedEmp.userdetails[0].fullname
-              this.products.push(result_product);
-            }
-            this.total = this.products.reduce(
-              (acc, product) => acc + product.subtotal,
-              0
-            );
-     
-
-
-            for (const item of this.products) {
-              if (item.discounted === true) {
-                this.ifdiscount = true;
-                break;
-              }
-            }
-            this.products_code = "";
-
-            for (const item of this.products) {
-              if (item.discounted === true) {
-                this.ifdiscount = true;
-                break;
-              }
-            }
-          })
-          .catch((error) => {
-            console.error("Error fetching products:", error);
-            this.products_code = "";
-          });
+    if (existingProduct) {
+      // Check if the stock is available
+      if (existingProduct.stock <= 0) {
+        alert(`The product "${existingProduct.item}" is out of stock.`);
+        return; // Exit early if stock is zero
       }
-    },
+
+      // Update stock and quantity locally
+      existingProduct.stock--;
+      existingProduct.quantity++;
+      existingProduct.subtotal =
+        existingProduct.salesPrice * existingProduct.quantity;
+
+      // Recalculate total
+      this.total = this.products.reduce(
+        (acc, product) => acc + product.subtotal,
+        0
+      );
+
+      return; // Exit as the local update is complete
+    }
+
+    // If not in the local array, fetch from the server
+    Inventory.fetchPerProduct(this.$store.state.storedEmp.token, val)
+      .then((res) => {
+        let result_product = res.data[0];
+
+        // Check if stock is zero
+        if (result_product.stock <= 0) {
+          alert(`The product "${result_product.item}" is out of stock.`);
+          return; // Exit early if stock is zero
+        }
+
+        result_product.discounted = false;
+        
+        // Update the original price and applied discount
+        this.orginal_price += result_product.salesPrice;
+        this.applied_discount +=
+          (result_product.salesPrice * result_product.discount_value) / 100;
+
+        // Initialize product details
+        result_product.quantity = 1; // Initialize quantity to 1
+        result_product.stock--; // Decrease stock as it's being added
+
+        // Check if the product has a discount
+        if (result_product.discount_id && result_product.discount_value) {
+          // Apply the discount to the sales price
+          result_product.salesPrice -=
+            (result_product.salesPrice * result_product.discount_value) / 100;
+          result_product.discounted = true;
+        }
+        result_product.subtotal =
+          result_product.salesPrice * result_product.quantity; // Calculate subtotal
+        result_product.editMode = false;
+        result_product.salesID = this.nexSalesID;
+        result_product.transaction_by =
+          this.$store.state.storedEmp.userdetails[0].fullname;
+
+        // Add the new product to the local `this.products` array
+        this.products.push(result_product);
+
+        // Recalculate total
+        this.total = this.products.reduce(
+          (acc, product) => acc + product.subtotal,
+          0
+        );
+        for (const item of this.products) {
+              if (item.discounted === true) {
+                this.ifdiscount = true;
+                break;
+              }
+            }
+            this.products_code = "";
+
+            for (const item of this.products) {
+              if (item.discounted === true) {
+                this.ifdiscount = true;
+                break;
+              }
+            }
+      })
+      .catch((error) => {
+        console.error("Error fetching products:", error);
+      });
+  }
+},
     // ALL @CLICK FUNCTION
     electronicPayment() {
       this.mode_of_payment = null
@@ -1399,8 +1419,44 @@ return this.applied_discount.toFixed(2)
         });
     },
     getLatestSalesID(){
+      Sales.getLatestSalesIDData(this.$store.state.storedEmp.token).then((res) => {
+        let dateToday = moment().format("YYYYMMDD")
 
-      this.nexSalesID = this.$store.state.salesID;
+  let latestSalesID = res.data[0].salesID;
+
+
+  let salesIDString = latestSalesID.toString();
+
+  let lastDigits = parseInt(salesIDString.slice(-5)); 
+  let remainingPart = salesIDString.slice(0, -5)
+
+  lastDigits++;
+if(remainingPart != dateToday){
+    if (lastDigits > 99999) {
+    lastDigits = 1;
+    dateToday = dateToday ? parseInt(dateToday) + 1 : 1;
+  }
+  this.nexSalesID = `${dateToday}${lastDigits.toString().padStart(5, "0")}`;
+
+}
+else{
+  if (lastDigits > 99999) {
+    
+    lastDigits = 1;
+    remainingPart = remainingPart ? parseInt(remainingPart) + 1 : 1; 
+  }
+
+
+  this.nexSalesID = `${remainingPart}${lastDigits.toString().padStart(5, "0")}`;
+}
+
+ 
+
+
+});
+
+
+
      
 
     } 

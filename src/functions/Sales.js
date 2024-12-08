@@ -27,7 +27,7 @@ AddSales(token,fullname,epayment,cashpayment,products,reference_number,cash,nexS
     )
   },
   // GET SALE NUMBER latest
-  getLatestSalesID(token){
+  getLatestSalesIDData(token){
     return Promise.resolve(
       axios
       .get(`${apiUrl}/sales/api/latestSalesID`, {

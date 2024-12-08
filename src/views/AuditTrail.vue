@@ -4,7 +4,7 @@
       <h1>Transaction Logs</h1>
       <v-row>
         <v-col cols="6" sm="6">
-          <v-text-field outlined rounded color="primary" dense label="Search" />
+          <v-text-field v-model="search" outlined rounded color="primary" dense label="Search" />
         </v-col>
         <v-col>
           <v-menu
@@ -66,45 +66,20 @@
       <v-row>
         <v-col cols="12">
           <v-card>
-            <v-card-text>
-              <v-simple-table class="border" dense>
-                <thead>
-                  <tr>
-                    <th v-for="(items, index) in headers" :key="index">
-                      {{ items.text }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    :style="
-                      items.stock <= 5 ? 'background-color:#CE4257;color:white;' : ''
-                    "
-                    v-for="(items, index) in paginatedItems"
-                    :key="index"
-                  >
-                  <td>{{ fixedDate(items.date) }}</td>
-                  <td>{{ items.transaction_by }}</td>
-                  <td>{{ items.description }}</td>
-                    <td>{{ items.action }}</td>
-                    <td>{{ items.product_number }}</td>
-                    <td>{{ items.quantity }}</td>
-                    <td>{{ items.drawerLink }}</td>
-                  </tr>
-                </tbody>
-              </v-simple-table>
-            </v-card-text>
+              <v-data-table
+    :headers="headers"
+    :items="all_products"
+    :items-per-page="5"
+    class="elevation-1"
+    :search="search"
+  >
+</v-data-table>
+  
+             
           </v-card>
         </v-col>
       </v-row>
-      <v-row
-        ><v-col>
-          <v-pagination
-            v-model="currentPage"
-            :length="numPages"
-            @input="changePage"
-          /> </v-col
-      ></v-row>
+    
       <v-dialog v-model="add_dialog" width="40%">
         <v-card>
           <v-card-title> Add Item </v-card-title>
@@ -215,6 +190,7 @@ import secret_key from "../plugins/md5decrypt";
 export default {
   data: () => {
     return {
+      search:"",
       apiUrl: process.env.VUE_APP_API_URL,
       startDate: moment().subtract(1, "month").format("YYYY-MM-DD"),
       endDate: moment().format("YYYY-MM-DD"),
@@ -307,7 +283,12 @@ export default {
           },
         })
         .then((res) => {
-          this.all_products = res.data;
+          for (let i = 0; i < res.data.length; i++) {
+            const element = res.data[i];
+            element.date = moment(element.date).format("YYYY-MM-DD HH:mm:ss")
+            this.all_products.push(element);
+
+          }
           // console.log(res.data);
         });
     },
