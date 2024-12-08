@@ -415,7 +415,7 @@ export default {
       },
     })
     .then((res) => {
- 
+      console.log(res.data)
       this.all_products = res.data
       
     });

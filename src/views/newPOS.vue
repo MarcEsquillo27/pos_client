@@ -409,7 +409,7 @@
                   "
                 >
                   <div>20% Discount:</div>
-                  <div>{{ discounted?'YES':'NO' }}</div>
+                  <div>{{ discounted? this.applied_discount: '0' }}</div>
                 </li>
                 <li
                   style="
@@ -867,6 +867,7 @@ export default {
       })
       this.pwd_dialog = false
     })
+    this.applied_discount = (this.total * 20) / 100
   },
   getAge(){
     const today = moment();
