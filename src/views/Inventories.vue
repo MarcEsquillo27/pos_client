@@ -69,7 +69,6 @@
       <v-row>
         <v-col cols="12">
   <v-data-table
-    :headers="headers"
     :items="InventoriesProduct"
     :items-per-page="10"
     :search="search"
