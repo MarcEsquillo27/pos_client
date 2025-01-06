@@ -163,6 +163,9 @@
 import axios from "axios";
 import Swal from "sweetalert2";
 import secret_key from "../plugins/md5decrypt";
+import Audits from "../functions/Audit"
+import moment from 'moment';
+
 export default {
   data: () => {
     return {
@@ -220,6 +223,16 @@ export default {
           authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
         },
       });
+      let audit_logs = {
+                  action: `Return`,
+                  description:  `Item Exchanged`,
+                  product_number: this.toUpdate.productNumber,
+                  quantity: this.quantity,
+                  drawer_link: `Return and Exchange`,
+                  date: moment().format("YYYY-MM-DD hh:mm:ss"),
+                  transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
+                };
+                Audits.AddLogs(this.$store.state.storedEmp.token,audit_logs)
       Swal.fire({
         title: "Item Changed",
         icon: "success",
@@ -252,6 +265,16 @@ export default {
           },
         }
       );
+      let audit_logs = {
+                  action: `Exchange`,
+                  description:  `Item Exchanged`,
+                  product_number: this.toUpdate.productNumber,
+                  quantity: this.quantity,
+                  drawer_link: `Return and Exchange`,
+                  date: moment().format("YYYY-MM-DD hh:mm:ss"),
+                  transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
+                };
+                Audits.AddLogs(this.$store.state.storedEmp.token,audit_logs)
       Swal.fire({
         title: "Item Changed",
         icon: "success",
@@ -263,6 +286,7 @@ export default {
       this.total = this.toUpdate.salesPrice * this.quantity;
     },
     getItemDetails(val) {
+      console.log(val,"269")
       this.toExchange = false;
       axios
         .get(`${this.apiUrl}/inventory/api/getPerItem/${val}`, {
@@ -278,6 +302,7 @@ export default {
           }
         });
       this.quantity = null;
+     
     },
     editItems(val) {
       const oldItem = JSON.parse(JSON.stringify(val));
@@ -354,7 +379,7 @@ export default {
       // })
     },
     returnItems(val) {
-      console.log(val);
+      console.log(val,"382");
       this.toUpdate.salesID = val.salesID;
       axios
         .get(`${this.apiUrl}/sales/api/getbySalesId/${val.salesID}`, {
@@ -372,17 +397,8 @@ export default {
             this.saled_items.push(element);
           }
         });
-      // this.saled_items = [];
-      // this.return_dialog = true;
-      // let arr_product = JSON.parse(val.products);
-      // for (let i = 0; i < arr_product.length; i++) {
-      //   const element = arr_product[i];
-      //   element.editModeReturn = false;
-      //   this.saled_items.push(element);
-      // }
     },
     toggleDelete(item) {
-      console.log(item);
       let confirmation = confirm("Are you sure you want to Return Item?");
       if (confirmation) {
         axios.get(`${this.apiUrl}/sales/api/deletebySalesId/${item.id}`, {
@@ -392,13 +408,19 @@ export default {
         });
         let get_index = this.saled_items.indexOf(item);
         this.saled_items.splice(get_index, 1);
+        
+        let audit_logs = {
+                  action: `Return`,
+                  description:  `Item Return`,
+                  product_number: item.productNumber,
+                  quantity: item.quantity,
+                  drawer_link: `Return and Exchange`,
+                  date: moment().format("YYYY-MM-DD hh:mm:ss"),
+                  transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
+                };
+                Audits.AddLogs(this.$store.state.storedEmp.token,audit_logs)
       this.saveChanges(item)
       window.location.reload();
-
-        // this.total =this.total - item.subtotal
-        // this.products_code = ""
-        // this.cash = 0
-        // this.change = 0
       }
     },
   },

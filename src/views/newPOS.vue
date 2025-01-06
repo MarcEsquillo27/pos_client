@@ -926,6 +926,8 @@ export default {
           });
           this.totalPages = Math.ceil(data.totalItems / this.itemsPerPage);
           this.list_of_products;
+          this.getProducts(this.product_search)
+          
         })
         .catch((error) => {
           console.error("Error fetching products:", error);
@@ -1077,13 +1079,14 @@ export default {
       // }
     },
     toggleDelete(item) {
+      console.log(item)
+      const reverseDiscountPrice = item.salesPrice / (1 - (item.discount_value / 100))
       let confirmation = confirm("Are you sure you want to delete?");
       if (confirmation) {
         let void_items = [];
         void_items.push(item);
             
             let get_index = this.products.indexOf(item);
-        
 
             this.products.splice(get_index, 1);
             for (const item of this.products) {
@@ -1095,8 +1098,11 @@ export default {
                 this.ifdiscount = false;
                 break;
               }
+             
             }
             this.total = this.total - item.subtotal;
+            this.orginal_price =  this.orginal_price - reverseDiscountPrice
+            this.applied_discount = this.applied_discount - item.discount_value
             this.products_code = "";
             this.cash = 0;
             this.change = 0;
@@ -1112,9 +1118,9 @@ export default {
     },
    
     //Total Discount Apply
-    appliedDiscount(){
+    appliedDiscount(){ 
 return this.applied_discount.toFixed(2)
-    },
+    }, 
     //TOTAL SUB
     subTotal(){
       return this.orginal_price.toFixed(2);
@@ -1142,6 +1148,7 @@ return this.applied_discount.toFixed(2)
     },
     //ALL GET DATA
     getProducts(val) {
+
   if (val) {
     // Find the product in the local `this.products` array
     let existingProduct = this.products.find(
@@ -1166,7 +1173,6 @@ return this.applied_discount.toFixed(2)
         (acc, product) => acc + product.subtotal,
         0
       );
-
       return; // Exit as the local update is complete
     }
 

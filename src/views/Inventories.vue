@@ -73,9 +73,10 @@
     :items-per-page="10"
     :search="search"
     class="elevation-1"
+     :headers="headers"
     dense
   >
-  <template v-slot:header>
+  <!-- <template v-slot:header>
     <thead>
       <tr>
         <th
@@ -91,7 +92,7 @@
         </th>
       </tr>
     </thead>
-  </template>
+  </template> -->
     <!-- Custom Row Rendering with v-slot -->
     <template v-slot:item="{ item }">
       <tr

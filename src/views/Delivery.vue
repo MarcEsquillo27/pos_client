@@ -34,6 +34,8 @@
                 :style="!items.delivery_status ? 'background-color:#FFBB64;' : 'background-color:#5AB55E;'"
                 v-for="(items, index) in list_of_delivery"
                 :key="index"
+              @click="deliveryDetails(items)"
+
               >
                 <td>{{ items.salesID }}</td>
                 <td>{{ items.name }}</td>
@@ -65,6 +67,23 @@
         </v-col>
       </v-row>
     </v-container>
+    <v-dialog v-model="openDialog" width="500">
+      <v-card elevation="11">
+        <v-card-title class="text--primary">
+          Delivery Schedule Details
+        </v-card-title>
+        <v-card-text class="text--primary">
+          <v-text-field outlined readonly rounded dense block label="Sales ID" v-model="viewDetails.salesID"/>
+          <v-text-field outlined readonly rounded dense block label="Name" v-model="viewDetails.name"/>
+          <v-text-field outlined readonly rounded dense block label="Contact" v-model="viewDetails.contact"/>
+          <v-text-field outlined readonly rounded dense block label="Address" v-model="viewDetails.address"/>
+          <v-text-field outlined readonly rounded dense block label="Transaction By" v-model="viewDetails.transaction_by"/>
+          <v-text-field outlined readonly rounded dense block label="Shipment Date" v-model="viewDetails.shipment_date"/>
+          <v-text-field outlined readonly rounded dense block label="Shipment Time" v-model="viewDetails.shipment_time"/>
+          <v-text-field outlined readonly rounded dense block label="Delivery Status" v-model="viewDetails.delivery_status"/>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -76,6 +95,8 @@ import Delivery from "../functions/Delivery"
 export default {
   data: () => {
     return {
+      viewDetails:{},
+      openDialog:false,
       currentPage: 1,
       itemsPerPage: 10,
       totalPages: 0,
@@ -110,6 +131,11 @@ export default {
     },
   },
   methods: {
+    deliveryDetails(items){
+      this.openDialog = true
+      this.viewDetails = items
+      console.log(this.viewDetails)
+    },
     searchDelivery() {
       Delivery.searchDelivery(this.$store.state.storedEmp.token,this.search)
       
