@@ -128,22 +128,17 @@ export default {
     getStoreDetails() {
      getStore.getStoreData(this.$store.state.storedEmp.token).then((res)=>{
       this.store_name = res.data[0].store_name
-      console.log(res.data,"139")
      })
     },
     
     saveReceiptStock(){
       this.$store.state.printPaper = this.$store.state.printPaper + parseInt(this.receipt_stock)
-      // console.log(this.$store.state.printPaper)
-
 
       getStore.getStore(this.$store.state.storedEmp.token,this.$store.state.printPaper)
         .then(() => {
           Swal.fire("Saved!", "", "success");
           this.restock_reciept_dialog = false
-          // setTimeout(() => {
-          // location.reload();
-          // }, 1000);
+       
         });
       
    

@@ -567,7 +567,8 @@ export default {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       delete val.discount_value;
       delete val.categoryName;
-      Inventory.updateProduct(this.$store.state.storedEmp.token,val)
+      let itemArr = [val]
+      Inventory.updateProduct(this.$store.state.storedEmp.token,itemArr)
         .then(() => {
           // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");

@@ -789,20 +789,7 @@ export default {
       }
       return filteredProducts;
     },
-    // searchProducts() {
-    //   let productArr = this.filterCategory;
-    //   return productArr.filter((item) => {
-    //     // Convert both item name and product number to lowercase for case-insensitive search
-    //     const itemName = item.item.toLowerCase();
-    //     const productNumber = item.productNumber.toLowerCase();
 
-    //     // Check if either item name or product number contains the search query
-    //     return (
-    //       itemName.includes(this.product_search.toLowerCase()) ||
-    //       productNumber.includes(this.product_search.toLowerCase())
-    //     );
-    //   });
-    // },
   },
   methods: {
     closePWDDialog(){
@@ -904,14 +891,12 @@ export default {
         });
   },
     generateBarcode() {
-      if (this.salesInvoice) {
         JsBarcode("#barcode", this.nexSalesID, {
           format: "CODE128",
           displayValue: true,
           height: 30,
           fontSize: 12,
         });
-      }
     },
     fetchProducts() {
       Inventory.fetchProducts(this.$store.state.storedEmp.token,this.currentPage,this.itemsPerPage).then((response) => {
@@ -1286,12 +1271,16 @@ return this.applied_discount.toFixed(2)
       return false
         }
       }
-      Inventory.updateProduct(this.$store.state.storedEmp.token,this.products)
+      let finalDataItem = this.products.filter((product)=>{
+        product.stock =  product.stock - parseInt(product.quantity) + 1;
+        return product
+      })
+      Inventory.updateProduct(this.$store.state.storedEmp.token,finalDataItem)
         .then(() => {
           Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,
           this.epayment,
           this.cashpayment,
-          this.products,
+          finalDataItem,
           this.reference_number,
           this.cash,
           this.nexSalesID
@@ -1300,8 +1289,8 @@ return this.applied_discount.toFixed(2)
               this.salesInvoice = res.data[0];
             })
             .then(() => {
-              for (let i = 0; i < this.products.length; i++) {
-                const element = this.products[i];
+              for (let i = 0; i < finalDataItem.length; i++) {
+                const element = finalDataItem[i];
                 let audit_logs = {
                   action: `Decrease`,
                   description: `The ${element.productNumber} decreased ${element.quantity}`,

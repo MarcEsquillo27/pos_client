@@ -137,7 +137,6 @@ export default {
           },
       })
     .then((res) => {
-      console.log(res.data)
         let result_product = res.data[0];
         result_product.discounted = false;
         // Check if the product already exists in this.products based on its ID
@@ -175,7 +174,6 @@ export default {
         this.cash_dialog = true;
       },
       purchase(){
-        console.log(this.products)
         axios.post(`${this.apiUrl}/inventory/api/updateInventoryStock`,this.products,{
         headers: {
             'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
