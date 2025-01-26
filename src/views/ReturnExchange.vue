@@ -207,7 +207,6 @@ export default {
   },
   methods: {
     returnItem() {
-      console.log(this.toUpdate);
       // let old_quantity = val.stock
       let stock_toAdd = this.toUpdate.quantity - this.quantity;
       this.toUpdate.stock = this.toUpdate.stock + stock_toAdd;

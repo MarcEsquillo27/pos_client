@@ -19,7 +19,8 @@
                 >
                   <v-list-item>
                     <v-list-item-content>
-                      <v-list-item-title>{{ items.item }}   <v-icon :style="items.discount_value ? '' : 'display:none'">
+                      <v-list-item-title>{{ items.item }}   
+                        <v-icon :style="items.discount_value && items.status === 0? '' : 'display:none'">
                         mdi-sale
                       </v-icon></v-list-item-title>
                       <v-list-item-subtitle
@@ -61,7 +62,7 @@
                 <v-col
                   ><v-checkbox
                     class="mt-2"
-                    :disabled="ifdiscount ? true : false"
+                    :disabled="!ifdiscount && total > 0   ? false : true"
                     label="
                    20% Discount
                   "
@@ -197,10 +198,10 @@
                   :key="index"
                   :style="paperPrint == 0?'display: none;':''"
                 >
-                  <v-card elevation="10" @click="getProducts(items.productNumber)">
+                  <v-card elevation="10" :disabled="discounted && items.discount_value ? true : false" @click="getProducts(items.productNumber)">
                     <v-card-title>
                       {{ items.item }}
-                      <v-icon :style="items.discount_value ? '' : 'display:none'">
+                      <v-icon :style="items.discount_value && items.status === 0 ? '' : 'display:none'">
                         mdi-sale
                       </v-icon>
                     </v-card-title>
@@ -901,9 +902,11 @@ export default {
     fetchProducts() {
       Inventory.fetchProducts(this.$store.state.storedEmp.token,this.currentPage,this.itemsPerPage).then((response) => {
           const data = response.data;
+          console.log(data)
+
           this.list_of_products = data.products.filter((rec) => {
             if (rec.stock > 0) {
-              if (rec.discount_id !== null) {
+              if (rec.discount_id !== null && rec.status === 0) {
                 rec.salesPrice -= (rec.salesPrice * rec.discount_value) / 100;
               }
               return rec;

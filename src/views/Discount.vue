@@ -29,6 +29,8 @@
           </v-card>
           <v-btn x-small color="primary" xs dark @click="EditDiscount(items)">edit</v-btn>
           <v-btn x-small color="error" xs dark @click="DeleteDiscount(items)">delete</v-btn>
+          <v-btn v-if="items.status == 1" x-small color="primary" xs dark @click="Active(items)">Active</v-btn>
+          <v-btn v-else x-small color="warning" xs dark @click="Deactivate(items)">Deactive</v-btn>
 
           </v-col
         >
@@ -153,6 +155,52 @@ export default {
   },
 
   methods: {
+    Deactivate(val){
+       Swal.fire({
+        title: "Are you sure?",
+        text: "you want to Deactivate Discount?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, Deactivate it!",
+      }).then((result) => {
+         if (result.isConfirmed) {
+          Swal.fire({
+            title: "Deleted!",
+            text: "The Discount has been Deactivate.",
+            icon: "success",
+          });
+        Discount.deactivateSatusDiscount(this.$store.state.storedEmp.token,val).then(()=>{
+            location.reload()
+        })
+
+         }
+      })
+    },
+    Active(val){
+       Swal.fire({
+        title: "Are you sure?",
+        text: "you want to Activate Discount?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, Activate it!",
+      }).then((result) => {
+         if (result.isConfirmed) {
+          Swal.fire({
+            title: "Deleted!",
+            text: "The Discount has been Activate.",
+            icon: "success",
+          });
+        Discount.activateSatusDiscount(this.$store.state.storedEmp.token,val).then(()=>{
+            location.reload()
+        })
+
+         }
+      })
+    },
     DeleteDiscount(val){
        Swal.fire({
         title: "Are you sure?",

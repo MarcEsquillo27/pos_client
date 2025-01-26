@@ -24,6 +24,29 @@ const httpRequest = {
     })
     )
   },
+
+  deactivateSatusDiscount(token,toUpdate){
+    toUpdate.status = 1
+    return Promise.resolve(
+      axios
+      .post(`${apiUrl}/discount/api/statusDiscount`, toUpdate,{
+      headers: {
+          'authorization': `Bearer ${secret_key(token)}`, // Assuming Bearer token
+        },
+    })
+    )
+  },
+  activateSatusDiscount(token,toUpdate){
+    toUpdate.status = 0
+    return Promise.resolve(
+      axios
+      .post(`${apiUrl}/discount/api/statusDiscount`, toUpdate,{
+      headers: {
+          'authorization': `Bearer ${secret_key(token)}`, // Assuming Bearer token
+        },
+    })
+    )
+  },
   
 }
 
