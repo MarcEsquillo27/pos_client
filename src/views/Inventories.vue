@@ -192,7 +192,8 @@
               dense
             ></v-text-field>
             <v-text-field
-              v-model="insertItem.stock"
+             @change = "NotAllowedLessStock(insertItem.stock)"
+              v-model="currentStock"
               type="number"
               label="Stock"
               outlined
@@ -280,6 +281,7 @@ export default {
   data: () => {
     return {
       // apiUrl: process.env.VUE_APP_API_URL,
+      currentStock:0,
       search: "",
       dialog: false,
       dialogDelete: false,
@@ -336,7 +338,13 @@ export default {
     },
   },
   methods: {
-    
+    NotAllowedLessStock(){
+      
+      if(this.currentStock < this.insertItem.stock){
+        Swal.fire(`It should be more than current stock (${this.insertItem.stock})`, "", "error");
+        this.currentStock = this.insertItem.stock
+      }
+    },
     extractionData() {
       console.log(this.all_);
       const firstProcess = () => {
@@ -522,6 +530,7 @@ export default {
       return !totalCapital ? 0 : totalCapital;
     },
     editInventory(val) {
+      this.currentStock = val.stock
       this.addButton = false;
       this.insertItem = {};
       this.add_dialog = true;
@@ -542,6 +551,7 @@ export default {
         });
     },
     updateInventory(val) {
+
       if(!this.insertItem.productNumber || 
       !this.insertItem.item || 
       !this.insertItem.unit || 
@@ -558,7 +568,11 @@ export default {
         
         return false
       }
-      // this.actualStock = this.insertItem.stock
+      if(this.currentStock < this.insertItem.stock){
+        Swal.fire(`It should be more than current stock (${this.insertItem.stock})`, "", "error");
+        return false
+
+      }
             if(val.stock <=this.actualStock){
               alert("Not less than from actual stock")
               return false
@@ -570,7 +584,6 @@ export default {
       let itemArr = [val]
       Inventory.updateProduct(this.$store.state.storedEmp.token,itemArr)
         .then(() => {
-          // this.all_products.push(this.insertItem);
           alert("ITEM UPDATED");
           this.add_dialog = false;
           let audit_logs = {
@@ -614,6 +627,11 @@ export default {
         
         return false
       }
+      if(this.insertItem.stock  < 5){
+        Swal.fire("It should be 5 or more stocks", "", "error");
+        return false
+
+      }
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       let add_data = this.insertItem;
       Inventory.addProduct(this.$store.state.storedEmp.token,add_data)
@@ -654,6 +672,7 @@ export default {
   mounted() {
     this.fetchProducts();
     this.getAllCategories();
+    
     this.authorization = secret_key(this.$store.state.storedEmp.token);
   },
 };
