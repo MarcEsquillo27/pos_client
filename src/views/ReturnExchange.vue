@@ -253,7 +253,6 @@ export default {
           authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
         },
       });
-      // console.log(this.toOldItem)
       this.toOldItem[0].stock = this.toOldItem[0].stock + this.toOldItem[0].quantity;
       await axios.post(
         `${this.apiUrl}/sales/api/updateInventoryStockReturn`,
@@ -285,7 +284,6 @@ export default {
       this.total = this.toUpdate.salesPrice * this.quantity;
     },
     getItemDetails(val) {
-      console.log(val,"269")
       this.toExchange = false;
       axios
         .get(`${this.apiUrl}/inventory/api/getPerItem/${val}`, {
@@ -306,7 +304,6 @@ export default {
     editItems(val) {
       const oldItem = JSON.parse(JSON.stringify(val));
       this.toOldItem.push(oldItem);
-      console.log(this.toOldItem, "221");
       this.toUpdate = val;
       this.quantity = val.quantity;
       this.exchange_dialog = true;
@@ -325,7 +322,6 @@ export default {
               return rec;
             }
           });
-          console.log(res.data);
         });
     },
     toggleExchange() {
@@ -348,7 +344,6 @@ export default {
       item.editModeReturn = true;
     },
     saveChanges(item) {
-      console.log(item);
       item.stock = item.stock + parseInt(item.quantity);
       // console.log(item.stock , test)
       item.editModeReturn = false;
@@ -370,15 +365,15 @@ export default {
         headers: {
           authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
         },
-      });
-      this.return_dialog = false;
+      }).then(()=>{
+       
+        location.reload();
+        this.return_dialog = false;
+      })
+  
 
-      // .then((res)=>{
-
-      // })
     },
     returnItems(val) {
-      console.log(val,"382");
       this.toUpdate.salesID = val.salesID;
       axios
         .get(`${this.apiUrl}/sales/api/getbySalesId/${val.salesID}`, {
@@ -419,7 +414,6 @@ export default {
                 };
                 Audits.AddLogs(this.$store.state.storedEmp.token,audit_logs)
       this.saveChanges(item)
-      window.location.reload();
       }
     },
   },
