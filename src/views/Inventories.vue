@@ -542,6 +542,7 @@ export default {
       this.addButton = true;
       this.editButton = false;
       this.insertItem = {};
+      this.currentStock = 0;
     },
     fetchProducts() {
       Inventory.getAllProducts(this.$store.state.storedEmp.token)
@@ -581,6 +582,7 @@ export default {
       val.date = moment(val.date).format("YYYY-MM-DD hh:ss:mm");
       delete val.discount_value;
       delete val.categoryName;
+      val.stock = this.currentStock
       let itemArr = [val]
       Inventory.updateProduct(this.$store.state.storedEmp.token,itemArr)
         .then(() => {
@@ -617,7 +619,7 @@ export default {
       !this.insertItem.brand || 
       !this.insertItem.categoryID || 
       !this.insertItem.description || 
-      !this.insertItem.stock || 
+      !this.currentStock || 
       !this.insertItem.originalPrice || 
       !this.insertItem.salesPrice
 
@@ -632,7 +634,11 @@ export default {
         return false
 
       }
+      
+      console.log(this.insertItem)
+
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
+      this.insertItem.stock = this.currentStock
       let add_data = this.insertItem;
       Inventory.addProduct(this.$store.state.storedEmp.token,add_data)
         .then(() => {
