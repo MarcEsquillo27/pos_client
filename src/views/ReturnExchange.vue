@@ -272,13 +272,15 @@ export default {
                   date: moment().format("YYYY-MM-DD hh:mm:ss"),
                   transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
                 };
-                Audits.AddLogs(this.$store.state.storedEmp.token,audit_logs)
-      Swal.fire({
+                Audits.AddLogs(this.$store.state.storedEmp.token,audit_logs).then(()=>{
+                  Swal.fire({
         title: "Item Changed",
         icon: "success",
         timer: 1500,
       });
       location.reload();
+                })
+    
     },
     computeTotal() {
       this.total = this.toUpdate.salesPrice * this.quantity;

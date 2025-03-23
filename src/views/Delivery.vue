@@ -91,6 +91,7 @@
 import Swal from "sweetalert2";
 import moment from "moment";
 import Delivery from "../functions/Delivery"
+import Audit from "../functions/Audit"
 
 export default {
   data: () => {
@@ -163,7 +164,19 @@ export default {
           Delivery.updateDelivery(this.$store.state.storedEmp.token,rec.id)
         
             .then(() => {
-              location.reload();
+              let audit_logs = {
+            action: `Delivered Item`,
+            description: `Item Delivered Sales ID: ${rec.salesID}`,
+            product_number: `N/A`,
+            quantity: 0,
+            drawer_link: `Delivery Schedule`,
+            date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
+          };
+
+          Audit.AddLogs(this.$store.state.storedEmp.token,audit_logs).then(()=>{
+            location.reload();
+          })
             });
         } else if (result.isDenied) {
           Swal.fire("Changes are not saved", "", "info");

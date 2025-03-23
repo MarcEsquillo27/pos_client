@@ -160,18 +160,21 @@
               label="Item"
               outlined
               dense
+              @change="forAuditField({item:insertItem.item})"
             ></v-text-field>
             <v-text-field
               v-model="insertItem.unit"
               label="Unit"
               outlined
               dense
+               @change="forAuditField({unit:insertItem.unit})"
             ></v-text-field>
             <v-text-field
               v-model="insertItem.brand"
               label="Brand"
               outlined
               dense
+              @change="forAuditField({brand:insertItem.brand})"
             ></v-text-field>
             <v-autocomplete
               outlined
@@ -183,6 +186,8 @@
               :items="list_of_category"
               :item-text="(elem) => elem.categoryName"
               :item-value="(elem) => elem.categoryID"
+              @change="forAuditField({categoryID:insertItem.categoryID})"
+              
             />
             {{ insertItem.category }}
             <v-text-field
@@ -190,6 +195,8 @@
               label="Description"
               outlined
               dense
+              @change="forAuditField({description:insertItem.description})"
+
             ></v-text-field>
             <v-text-field
              @change = "NotAllowedLessStock(insertItem.stock)"
@@ -201,6 +208,7 @@
             ></v-text-field>
             <v-text-field
               v-model="insertItem.originalPrice"
+              @change="forAuditField({originalPrice:insertItem.originalPrice})"
               type="number"
               label="Orginal Price"
               outlined
@@ -212,14 +220,10 @@
               label="Sales Price"
               outlined
               dense
+              @change="forAuditField({salesPrice:insertItem.salesPrice})"
+              
             ></v-text-field>
-            <!-- <v-text-field
-              v-model="insertItem.discount"
-              type="number"
-              label="Discount Price"
-              outlined
-              dense
-            ></v-text-field> -->
+
             <v-row>
               <v-col
                 ><h3 style="color: black">
@@ -280,7 +284,7 @@ import Audit from "../functions/Audit"
 export default {
   data: () => {
     return {
-      // apiUrl: process.env.VUE_APP_API_URL,
+      storeChangeItem:[],
       currentStock:0,
       search: "",
       dialog: false,
@@ -328,7 +332,6 @@ export default {
     },
     InventoriesProduct() {
       let filteredProducts = this.all_products;
-      // Apply filter if necessary
       if (this.low_products) {
         filteredProducts = _.filter(filteredProducts, (item) => item.stock <= 5);
       } else if (this.no_products) {
@@ -338,12 +341,21 @@ export default {
     },
   },
   methods: {
+    forAuditField(item) {
+  if (this.storeChangeItem.length === 0) {
+    this.storeChangeItem.push(item);
+  } else {
+    Object.assign(this.storeChangeItem[0], item);
+  }
+
+},
     NotAllowedLessStock(){
       
       if(this.currentStock < this.insertItem.stock){
         Swal.fire(`It should be more than current stock (${this.insertItem.stock})`, "", "error");
         this.currentStock = this.insertItem.stock
       }
+      this.forAuditField({stock:this.currentStock})
     },
     extractionData() {
       console.log(this.all_);
@@ -477,6 +489,8 @@ export default {
             return false;
           }
         });
+      this.forAuditField({productNumber:val})
+
     },
     toggleLowStockFilter() {
       this.low_products = !this.low_products;
@@ -583,22 +597,37 @@ export default {
       delete val.discount_value;
       delete val.categoryName;
       val.stock = this.currentStock
+      
+     
       let itemArr = [val]
       Inventory.updateProduct(this.$store.state.storedEmp.token,itemArr)
         .then(() => {
           alert("ITEM UPDATED");
           this.add_dialog = false;
-          let audit_logs = {
-            action: `Update Item`,
-            description: `Update Item: ${val.productNumber} stock: ${val.stock}`,
-            product_number: val.productNumber,
-            quantity: val.stock,
-            drawer_link: `Inventories`,
-            date: moment().format("YYYY-MM-DD hh:mm:ss"),
-            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
-          };
+          for (const [key, value] of Object.entries(this.storeChangeItem[0])) {
+  let audit_logs = {
+    action: `Update Item`,
+    description: `Updated ${key}: ${value}`,
+    product_number: this.insertItem.productNumber,
+    quantity: this.insertItem.stock,
+    drawer_link: `Inventories`,
+    date: moment().format("YYYY-MM-DD hh:mm:ss"),
+    transaction_by: this.$store.state.storedEmp.userdetails[0].fullname
+  };
 
-          Audit.AddLogs(this.$store.state.storedEmp.token,audit_logs)
+  console.log("Audit Log:", audit_logs);
+
+  // Send log to the backend
+  Audit.AddLogs(this.$store.state.storedEmp.token, audit_logs)
+    .then(() => {
+      console.log(`Audit log for ${key} added successfully`);
+    })
+    .catch((err) => {
+      console.error("Error adding audit log:", err);
+    });
+}
+
+
         })
         .catch((err) => {
           alert(err);

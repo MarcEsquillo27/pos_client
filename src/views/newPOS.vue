@@ -1040,9 +1040,21 @@ export default {
       };
       // this.deliveryArr.push(get_details);
     Delivery.addDelivery(this.$store.state.storedEmp.token,get_details)
+    let audit_logs = {
+            action: `New Deliver Item`,
+            description: `Item to deliver salesID: ${this.nexSalesID}`,
+            product_number: `N/A`,
+            quantity: 0,
+            drawer_link: `POS`,
+            date: moment().format("YYYY-MM-DD hh:mm:ss"),
+            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
+          };
+
+          Audits.AddLogs(this.$store.state.storedEmp.token,audit_logs).then(()=>{
+            alert("Save Succesfully");
+            this.delivery_dialog = false;
+          })
      
-      alert("Save Succesfully");
-      this.delivery_dialog = false;
     },
     voidItem() {
       let confirmation = confirm("Are you sure you want to void the transaction?");
