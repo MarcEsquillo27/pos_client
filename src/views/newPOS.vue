@@ -1032,7 +1032,7 @@ export default {
       let get_details = {
         salesID: this.nexSalesID,
         name: this.contact_name,
-        address: this.address,
+        address: this.contact_address,
         contact: this.contact_details,
         shipment_date: this.selectedDate,
         shipment_time: this.selectedTime,
@@ -1283,7 +1283,6 @@ return this.applied_discount.toFixed(2)
         }
       }
       let finalDataItem = this.products.filter((product)=>{
-        product.stock =  product.stock - parseInt(product.quantity) + 1;
         return product
       })
       Inventory.updateProduct(this.$store.state.storedEmp.token,finalDataItem)
