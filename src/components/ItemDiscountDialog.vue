@@ -33,52 +33,6 @@
             item-value="productNumber"
             v-model="toUpdate.productNumber"
           />
-              <!-- <v-menu
-        v-model="menu2"
-        :close-on-content-click="false"
-        :nudge-right="40"
-        transition="scale-transition"
-        offset-y
-        min-width="auto"
-      >
-        <template v-slot:activator="{ on, attrs }">
-          <v-text-field
-            v-model="date2"
-            label="Start Date"
-            prepend-icon="mdi-calendar"
-            readonly
-            v-bind="attrs"
-            v-on="on"
-          ></v-text-field>
-        </template>
-        <v-date-picker
-          v-model="date2"
-          @input="menu2 = false"
-        ></v-date-picker>
-      </v-menu>
-      <v-menu
-        v-model="menu2"
-        :close-on-content-click="false"
-        :nudge-right="40"
-        transition="scale-transition"
-        offset-y
-        min-width="auto"
-      >
-        <template v-slot:activator="{ on, attrs }">
-          <v-text-field
-            v-model="date2"
-            label="End Date"
-            prepend-icon="mdi-calendar"
-            readonly
-            v-bind="attrs"
-            v-on="on"
-          ></v-text-field>
-        </template>
-        <v-date-picker
-          v-model="date2"
-          @input="menu2 = false"
-        ></v-date-picker>
-      </v-menu> -->
               <v-btn
                 class="mt-1"
                 
@@ -88,15 +42,7 @@
               >
                 SAVE
               </v-btn>
-              <!-- <v-btn
-                class="mt-1"
-                :style="!editButton ? 'display:none;' : ''"
-                @click="updateInventory(insertItem)"
-                color="success"
-                block
-              >
-                UPDATE
-              </v-btn> -->
+        
             </v-card-text>
           </v-card>
 </template>
@@ -110,7 +56,7 @@ import secret_key from "../plugins/md5decrypt";
 import Category from "../functions/Category"
 
 export default {
-    props:["insert_item","discount_price"],
+  props: ["insert_item", "discount_price", "existing_items"],
  data: () => {
     return {
       category_id:"",
@@ -176,47 +122,59 @@ export default {
         this.filter_of_products = res.data
       });
     },
-    insertInventory(val){
-      if(!this.toUpdate.productNumber){
-        Swal.fire("Please complete the details", "", "error");
-        return false
-      }
-        val.discount_id = this.discount_price
- axios
-        .post(`${this.apiUrl}/inventory/api/updateInventory`, val,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      })
-        .then(() => {
-          // this.all_products.push(this.insertItem);
-          Swal.fire({
-            title: "Item Discounted",
-            icon: "success",
-            timer: 1500
-          });
-        //   this.add_dialog = false;
-          let audit_logs = {
-            action: `Discounted Item`,
-            description: `Discounted Item: ${val.productNumber}`,
-            product_number: val.productNumber,
-            quantity: 1,
-            drawer_link: `Discount`,
-            date: moment().format("YYYY-MM-DD hh:mm:ss"),
-            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
-          };
-          axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs,{
-        headers: {
-            'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
-          },
-      }).then(()=>{
-            location.reload()
-          });
-        })
-        .catch((err) => {
-          alert(err);
-        });
-    }
+    insertInventory(val) {
+  if (!this.toUpdate.productNumber) {
+    Swal.fire("Please complete the details", "", "error");
+    return false;
+  }
+
+  // 🔹 Validation: Check if item already exists in the discount
+  const alreadyExists = this.existing_items.some(
+    item => item.productNumber === this.toUpdate.productNumber
+  );
+
+  if (alreadyExists) {
+    Swal.fire("This product is already in the discount list", "", "error");
+    return false;
+  }
+
+  val.discount_id = this.discount_price;
+
+  axios.post(`${this.apiUrl}/inventory/api/updateInventory`, val, {
+    headers: {
+      'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`,
+    },
+  })
+  .then(() => {
+    Swal.fire({
+      title: "Item Discounted",
+      icon: "success",
+      timer: 1500
+    });
+
+    let audit_logs = {
+      action: `Discounted Item`,
+      description: `Discounted Item: ${val.productNumber}`,
+      product_number: val.productNumber,
+      quantity: 1,
+      drawer_link: `Discount`,
+      date: moment().format("YYYY-MM-DD hh:mm:ss"),
+      transaction_by: this.$store.state.storedEmp.userdetails[0].fullname
+    };
+
+    axios.post(`${this.apiUrl}/audit/api/addLogs`, audit_logs, {
+      headers: {
+        'authorization': `Bearer ${secret_key(this.$store.state.storedEmp.token)}`,
+      },
+    }).then(() => {
+      this.$emit("saved");        // refresh list
+      this.$emit("closeDialog");  // close dialog
+    });
+  })
+  .catch((err) => {
+    alert(err);
+  });
+}
   },
   mounted(){
     

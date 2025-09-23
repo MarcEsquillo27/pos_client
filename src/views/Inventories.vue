@@ -208,7 +208,7 @@
             ></v-text-field>
             <v-text-field
               v-model="insertItem.originalPrice"
-              @change="forAuditField({originalPrice:insertItem.originalPrice})"
+              @change="validateNumberValue({originalPrice:insertItem.originalPrice})"
               type="number"
               label="Orginal Price"
               outlined
@@ -220,7 +220,7 @@
               label="Sales Price"
               outlined
               dense
-              @change="forAuditField({salesPrice:insertItem.salesPrice})"
+              @change="validateNumberValue({salesPrice:insertItem.salesPrice})"
               
             ></v-text-field>
 
@@ -342,7 +342,7 @@ export default {
   },
   methods: {
     forAuditField(item) {
-  if (this.storeChangeItem.length === 0) {
+      if (this.storeChangeItem.length === 0) {
     this.storeChangeItem.push(item);
   } else {
     Object.assign(this.storeChangeItem[0], item);
@@ -538,6 +538,7 @@ export default {
       return !totalallCapital ? 0 : totalallCapital;
     },
     capitalPerItem(val) {
+     
       var totalCapital = null;
       totalCapital = val.salesPrice - val.originalPrice;
       //  totalCapital = val.salesPrice - val.originalPrice
@@ -565,7 +566,12 @@ export default {
           this.all_products = data;
         });
     },
+    
     updateInventory(val) {
+       if(val.salesPrice < val.originalPrice){
+        Swal.fire("Sale price is higher than orignal price", "", "error");
+        return false
+      }
 
       if(!this.insertItem.productNumber || 
       !this.insertItem.item || 
@@ -615,7 +621,35 @@ export default {
     transaction_by: this.$store.state.storedEmp.userdetails[0].fullname
   };
 
-  console.log("Audit Log:", audit_logs);
+  // Send log to the backend
+  Audit.AddLogs(this.$store.state.storedEmp.token, audit_logs)
+    .then(() => {
+      console.log(`Audit log for ${key} added successfully`);
+    })
+    .catch((err) => {
+      console.error("Error adding audit log:", err);
+    });
+}
+
+
+        })
+        .catch((err) => {
+          alert(err);
+        });
+
+        Inventory.updateInventory(this.$store.state.storedEmp.token,itemArr)
+        .then(() => {
+          this.add_dialog = false;
+          for (const [key, value] of Object.entries(this.storeChangeItem[0])) {
+  let audit_logs = {
+    action: `Update Item`,
+    description: `Updated ${key}: ${value}`,
+    product_number: this.insertItem.productNumber,
+    quantity: this.insertItem.stock,
+    drawer_link: `Inventories`,
+    date: moment().format("YYYY-MM-DD hh:mm:ss"),
+    transaction_by: this.$store.state.storedEmp.userdetails[0].fullname
+  };
 
   // Send log to the backend
   Audit.AddLogs(this.$store.state.storedEmp.token, audit_logs)
@@ -632,6 +666,7 @@ export default {
         .catch((err) => {
           alert(err);
         });
+
     },
     barcodeGenerate() {
       let twelveDigitNumber = "";
@@ -641,7 +676,48 @@ export default {
       this.insertItem.productNumber = twelveDigitNumber;
       this.$forceUpdate(); // Force Vue to update the view
     },
+    validateNumberValue(val) {
+  if (
+    this.insertItem &&
+    (this.insertItem.originalPrice != null || this.insertItem.salesPrice != null)
+  ) {
+    if (
+      (this.insertItem.originalPrice != null && this.insertItem.originalPrice < 0) ||
+      (this.insertItem.salesPrice != null && this.insertItem.salesPrice < 0)
+    ) {
+      this.insertItem.originalPrice = Math.max(0, this.insertItem.originalPrice || 0);
+      this.insertItem.salesPrice = Math.max(0, this.insertItem.salesPrice || 0);
+
+      Swal.fire({
+        title: "Warning",
+        text: "Negative value is not allowed",
+        icon: "warning"
+      });
+
+      return true; // indicates invalid input
+    }
+    this.forAuditField(val)
+  }
+}
+,
     insertInventory() {
+       if(this.insertItem.salesPrice < this.insertItem.originalPrice){
+        Swal.fire("Sale price is lower than orignal price", "", "error");
+      }
+       const numberValidation = this.validateNumberValue()
+
+         if(numberValidation){
+        this.insertItem.discount_value = 0;
+        Swal.fire({
+        title: "Warning",
+        text: "negative value is not allowed",
+        icon: "warning"
+        });
+        
+        return false
+        
+      }
+
       if(!this.insertItem.productNumber || 
       !this.insertItem.item || 
       !this.insertItem.unit || 
@@ -665,6 +741,8 @@ export default {
       }
       
       console.log(this.insertItem)
+
+   
 
       this.insertItem.date = moment().format("YYYY-MM-DD hh:mm:ss");
       this.insertItem.stock = this.currentStock

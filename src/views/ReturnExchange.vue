@@ -76,7 +76,7 @@
                         >mdi-pencil</v-icon
                       >
                     </template>
-                    <span>Edit Quantity</span>
+                    <span>edit quantity/exchange item</span>
                   </v-tooltip>
                 </td>
                 <td>

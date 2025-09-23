@@ -603,6 +603,7 @@
             dense
             block
             label="ID Number"
+            required
           ></v-text-field>
           <v-text-field
             v-model="pwd_details.last_name"
@@ -818,13 +819,22 @@ export default {
         const numericValue = parseFloat(this.cash);
         if (!isNaN(numericValue)) {
           this.cash = numericValue.toFixed(2); // Format with .00
-          if(this.cash != this.totalDiscounted()){alert(`Exact amount only`)}
+          if(this.cash != this.totalDiscounted()){
+                Swal.fire({
+                title: "Please enter exact amount",
+                text: `it should be equal to ${this.totalDiscounted()}`,
+                icon: "warning"
+                });
+
+                return true
+          
         } else {
-          this.cash = ""; // Clear if the input is invalid
+          this.cash = "";
         }
         
       }
-    },
+    }
+  },
     checkInput(event) {
       const charCode = event.charCode ? event.charCode : event.keyCode;
       // Allow only digits (0-9) and control keys (e.g., backspace)
@@ -843,20 +853,61 @@ export default {
     this.authorization = secret_key(this.$store.state.storedEmp.token);
     this.paperPrint = this.$store.state.printPaper;
   },
-  savePwdDetails(val){
-    // console.log(val)
-    val.sales_id = this.nexSalesID
-    val.date = moment().format("YYYY-MM-DD HH:mm:ss")
-    PWD.addPwd(this.$store.state.storedEmp.token,val).then(()=>{
-      Swal.fire({
-        title: "Saved",
-        icon: "success",
-        timer: 2000,
-      })
-      this.pwd_dialog = false
-    })
-    this.applied_discount = (this.total * 20) / 100
-  },
+  savePwdDetails(val) {
+  console.log(val);
+
+  // --- Validation rules ---
+  const errors = [];
+
+  if (!val.first_name || val.first_name.trim() === "") {
+    errors.push("First name is required.");
+  }
+
+  if (!val.middle_name || val.middle_name.trim() === "") {
+    errors.push("Middle name is required.");
+  }
+
+  if (!val.last_name || val.last_name.trim() === "") {
+    errors.push("Last name is required.");
+  }
+
+  if (!val.birth_date || !moment(val.birth_date, "YYYY-MM-DD", true).isValid()) {
+    errors.push("Birth date is invalid or missing.");
+  }
+
+  if (typeof val.age !== "number" || val.age <= 0) {
+    errors.push("Age must be greater than 0.");
+  }
+
+  if (!val.sex || !["Male", "Female"].includes(val.sex)) {
+    errors.push("Sex must be 'Male' or 'Female'.");
+  }
+
+  // If errors, stop and show user
+  if (errors.length > 0) {
+    Swal.fire({
+      title: "Validation Error",
+      html: errors.join("<br>"),
+      icon: "error"
+    });
+    return;
+  }
+
+  // --- If validation passes, continue ---
+  val.sales_id = this.nexSalesID;
+  val.date = moment().format("YYYY-MM-DD HH:mm:ss");
+
+  PWD.addPwd(this.$store.state.storedEmp.token, val).then(() => {
+    Swal.fire({
+      title: "Saved",
+      icon: "success",
+      timer: 2000,
+    });
+    this.pwd_dialog = false;
+  });
+
+  this.applied_discount = (this.total * 20) / 100;
+},
   getAge(){
     const today = moment();
     const birth = moment(this.birth_date); 
@@ -1029,33 +1080,78 @@ export default {
       // }
     },
     saveDelivery() {
-      let get_details = {
-        salesID: this.nexSalesID,
-        name: this.contact_name,
-        address: this.contact_address,
-        contact: this.contact_details,
-        shipment_date: this.selectedDate,
-        shipment_time: this.selectedTime,
-        transaction_by: this.$store.state.storedEmp.userdetails[0].fullname
-      };
-      // this.deliveryArr.push(get_details);
-    Delivery.addDelivery(this.$store.state.storedEmp.token,get_details)
-    let audit_logs = {
-            action: `New Deliver Item`,
-            description: `Item to deliver salesID: ${this.nexSalesID}`,
-            product_number: `N/A`,
-            quantity: 0,
-            drawer_link: `POS`,
-            date: moment().format("YYYY-MM-DD hh:mm:ss"),
-            transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
-          };
+  let get_details = {
+    salesID: this.nexSalesID,
+    name: this.contact_name,
+    address: this.contact_address,
+    contact: this.contact_details,
+    shipment_date: this.selectedDate,
+    shipment_time: this.selectedTime,
+    transaction_by: this.$store.state.storedEmp.userdetails[0].fullname
+  };
 
-          Audits.AddLogs(this.$store.state.storedEmp.token,audit_logs).then(()=>{
-            alert("Save Succesfully");
-            this.delivery_dialog = false;
-          })
-     
-    },
+  // --- Validation rules ---
+  const errors = [];
+
+  if (!get_details.name || get_details.name.trim() === "") {
+    errors.push("Contact name is required.");
+  }
+
+  if (!get_details.address || get_details.address.trim() === "") {
+    errors.push("Address is required.");
+  }
+
+  if (!get_details.contact || get_details.contact.trim() === "") {
+    errors.push("Contact details are required.");
+  } else if (!/^[0-9+\-\s()]+$/.test(get_details.contact)) {
+    errors.push("Contact details must contain only numbers or valid symbols (+, -, ()).");
+  }
+
+  if (!get_details.shipment_date || !moment(get_details.shipment_date, "YYYY-MM-DD", true).isValid()) {
+    errors.push("Shipment date is invalid or missing.");
+  }
+
+  if (!get_details.shipment_time || !moment(get_details.shipment_time, "HH:mm", true).isValid()) {
+    errors.push("Shipment time is invalid or missing.");
+  }
+
+  if (!get_details.transaction_by || get_details.transaction_by.trim() === "") {
+    errors.push("Transaction by is required.");
+  }
+
+  // If errors, stop and notify user
+  if (errors.length > 0) {
+    Swal.fire({
+      title: "Validation Error",
+      html: errors.join("<br>"),
+      icon: "error"
+    });
+    return;
+  }
+
+  // --- If validation passes, continue ---
+  Delivery.addDelivery(this.$store.state.storedEmp.token, get_details);
+
+  let audit_logs = {
+    action: `New Deliver Item`,
+    description: `Item to deliver salesID: ${this.nexSalesID}`,
+    product_number: `N/A`,
+    quantity: 0,
+    drawer_link: `POS`,
+    date: moment().format("YYYY-MM-DD HH:mm:ss"),
+    transaction_by: this.$store.state.storedEmp.userdetails[0].fullname
+  };
+
+  Audits.AddLogs(this.$store.state.storedEmp.token, audit_logs).then(() => {
+    Swal.fire({
+      title: "Saved",
+      icon: "success",
+      timer: 2000
+    });
+    this.delivery_dialog = false;
+  });
+}
+,
     voidItem() {
       let confirmation = confirm("Are you sure you want to void the transaction?");
       if (confirmation) {
@@ -1284,6 +1380,16 @@ return this.applied_discount.toFixed(2)
       // Void.addVoid(this.$store.state.storedEmp.token,void_items)
     },
     purchase() {
+      const exactAmmountValidation = this.exactAmountOnly()
+      if(exactAmmountValidation == true){
+        Swal.fire({
+                title: "Please enter exact amount",
+                text: `it should be equal to ${this.totalDiscounted()}`,
+                icon: "warning"
+                });
+        return false
+      }
+      
       if(this.epayment){
         if(!this.reference_number){
           Swal.fire({

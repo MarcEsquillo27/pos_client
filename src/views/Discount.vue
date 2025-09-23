@@ -46,7 +46,7 @@
       </v-card-title>
       <v-card-text>
         <br>
-       <ItemLisDiscountDialog :list_of_discount_items="list_of_discount_items" :value="discount_price"/>
+       <ItemLisDiscountDialog :list_of_discount_items="list_of_discount_items" :value="discount_price" @refreshList="getAllProductsDiscounted"/>
       </v-card-text>
      
     </v-card>
@@ -69,6 +69,7 @@
               label="Discount Value"
               outlined
               dense
+              @change="validateNumberValue()"
             />
             <v-btn
               class="mt-1"
@@ -155,6 +156,19 @@ export default {
   },
 
   methods: {
+        validateNumberValue() {
+        if (this.insertItem && this.insertItem.discount_value != null) {
+        if (this.insertItem.discount_value < 0) {
+        this.insertItem.discount_value = 0;
+        Swal.fire({
+        title: "Warning",
+        text: "negative value is not allowed",
+        icon: "warning"
+        });
+        return true
+        }
+        }
+        },
     Deactivate(val){
        Swal.fire({
         title: "Are you sure?",
@@ -272,6 +286,18 @@ export default {
       });
     },
     updateDiscount(val) {
+       const numberValidation = this.validateNumberValue()
+      if(numberValidation){
+        this.insertItem.discount_value = 0;
+        Swal.fire({
+        title: "Warning",
+        text: "negative value is not allowed",
+        icon: "warning"
+        });
+        
+        return false
+        
+      }
        if(this.insertItem.discount_value > 100){
            Swal.fire("1 to 100 value only", "", "error");
         return false
@@ -298,6 +324,18 @@ export default {
         });
     },
     insertDiscount() {
+      const numberValidation = this.validateNumberValue()
+      if(numberValidation){
+        this.insertItem.discount_value = 0;
+        Swal.fire({
+        title: "Warning",
+        text: "negative value is not allowed",
+        icon: "warning"
+        });
+        
+        return false
+        
+      }
       if(this.insertItem.discount_value > 100){
            Swal.fire("1 to 100 value only", "", "error");
         return false

@@ -51,7 +51,7 @@
             </v-simple-table>
              <v-dialog v-model="add_dialog_item" width="300">
         <v-card>
-         <ItemDiscountDialog :discount_price="value" :insert_item="insert_item"/>
+         <ItemDiscountDialog :discount_price="value" :insert_item="insert_item" @saved="$emit('refreshList')" @closeDialog="add_dialog_item = false" :existing_items="list_of_discount_items" />
         </v-card>
       </v-dialog>
   </div>
@@ -123,7 +123,7 @@ export default {
             transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
           };
            Audit.AddLogs(this.$store.state.storedEmp.token,audit_logs).then(()=>{
-            location.reload()
+            this.$emit("refreshList");
           });
         })
         .catch((err) => {
