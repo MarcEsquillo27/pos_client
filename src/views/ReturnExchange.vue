@@ -133,7 +133,9 @@
           <v-text-field
             type="number"
             v-model="quantity"
-            @change="computeTotal()"
+            min="1"
+            :max="toUpdate.stock"
+            @input="computeTotal()"
             label="Quantity"
             outlined
             dense
@@ -142,7 +144,7 @@
         </v-card-text>
         <v-card-actions>
           <v-btn
-            :disabled="toExchange ? true : false"
+            :disabled="!canExchange"
             color="primary"
             @click="updateSales()"
             >Exchange</v-btn
@@ -205,6 +207,58 @@ export default {
       toOldItem: [],
     };
   },
+  computed: {
+    exchangeQuantityIsValid() {
+      const originalItem = this.toOldItem[0];
+      const quantity = Number(this.quantity);
+      const originalQuantity = Number(originalItem && originalItem.quantity);
+
+      return (
+        Number.isFinite(quantity) &&
+        Number.isFinite(originalQuantity) &&
+        quantity >= originalQuantity
+      );
+    },
+    exchangeValueExceedsOriginal() {
+      const originalItem = this.toOldItem[0];
+
+      if (!originalItem) {
+        return true;
+      }
+
+      const originalPrice = Number(originalItem.salesPrice);
+      const originalQuantity = Number(originalItem.quantity);
+      const hasSavedOriginalTotal =
+        originalItem.total !== null && originalItem.total !== "";
+      const savedOriginalTotal = Number(originalItem.total);
+      const originalTotal =
+        hasSavedOriginalTotal && Number.isFinite(savedOriginalTotal)
+          ? savedOriginalTotal
+          : originalPrice * originalQuantity;
+      const exchangeTotal =
+        Number(this.toUpdate.salesPrice) * Number(this.quantity);
+
+      return (
+        !Number.isFinite(originalTotal) ||
+        !Number.isFinite(exchangeTotal) ||
+        exchangeTotal > originalTotal
+      );
+    },
+    canExchange() {
+      const quantity = Number(this.quantity);
+      const stock = Number(this.toUpdate.stock);
+
+      return (
+        !this.toExchange &&
+        this.exchangeQuantityIsValid &&
+        !this.exchangeValueExceedsOriginal &&
+        Number.isFinite(quantity) &&
+        quantity > 0 &&
+        Number.isFinite(stock) &&
+        quantity <= stock
+      );
+    },
+  },
   methods: {
     returnItem() {
       // let old_quantity = val.stock
@@ -240,6 +294,25 @@ export default {
       location.reload();
     },
     async updateSales() {
+      if (!this.canExchange) {
+        const valueIsTooHigh = this.exchangeValueExceedsOriginal;
+        const quantityIsTooLow = !this.exchangeQuantityIsValid;
+        Swal.fire({
+          title: quantityIsTooLow
+            ? "Invalid exchange quantity"
+            : valueIsTooHigh
+            ? "Invalid exchange value"
+            : "Invalid quantity",
+          text: quantityIsTooLow
+            ? "The exchange quantity cannot be lower than the original quantity."
+            : valueIsTooHigh
+            ? "The exchange total cannot be higher than the original item total."
+            : "Enter a valid quantity within the remaining stock.",
+          icon: "warning",
+        });
+        return;
+      }
+
       this.toUpdate.quantity = this.quantity;
       this.toUpdate.total = this.toUpdate.salesPrice * this.quantity;
       this.toUpdate.stock = this.toUpdate.stock - this.quantity;
@@ -299,13 +372,12 @@ export default {
             this.toUpdate.stock = element.stock;
             this.toUpdate.salesPrice = element.salesPrice;
           }
+          this.computeTotal();
         });
-      this.quantity = null;
-     
     },
     editItems(val) {
       const oldItem = JSON.parse(JSON.stringify(val));
-      this.toOldItem.push(oldItem);
+      this.toOldItem = [oldItem];
       this.toUpdate = val;
       this.quantity = val.quantity;
       this.exchange_dialog = true;

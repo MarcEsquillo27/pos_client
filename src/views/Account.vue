@@ -103,6 +103,7 @@
               label="Password"
               outlined
               dense
+              :error-messages="passwordValidationMessage"
               append-outer-icon="mdi-clipboard-outline"
               @click:append-outer="copyText"
             ></v-text-field>
@@ -166,6 +167,7 @@
             ></v-autocomplete> -->
 
             <v-btn
+              :disabled="requiredAccountFieldIsBlank || !passwordMeetsRequirements"
               class="mt-1"
               :style="!addButton ? 'display:none;' : ''"
               @click="insertInventory(insertItem)"
@@ -312,6 +314,34 @@ export default {
     };
   },
   computed: {
+    passwordMeetsRequirements() {
+      const password = String(this.insertItem.password || "");
+
+      return (
+        password.length >= 8 &&
+        /[a-z]/.test(password) &&
+        /[A-Z]/.test(password) &&
+        /\d/.test(password) &&
+        /[^A-Za-z0-9]/.test(password)
+      );
+    },
+    passwordValidationMessage() {
+      if (!this.insertItem.password || this.passwordMeetsRequirements) {
+        return "";
+      }
+
+      return "Use at least 8 characters with uppercase, lowercase, number, and special character.";
+    },
+    usernameIsBlank() {
+      return !String(this.insertItem.username || "").trim();
+    },
+    requiredAccountFieldIsBlank() {
+      return (
+        !String(this.insertItem.fullname || "").trim() ||
+        this.usernameIsBlank ||
+        !String(this.insertItem.password || "").trim()
+      );
+    },
     paginatedItems() {
       const startIndex = (this.currentPage - 1) * this.itemsPerPage;
       const endIndex = startIndex + this.itemsPerPage;
@@ -332,6 +362,52 @@ export default {
     },
   },
   methods: {
+    validatePassword(password) {
+      const passwordValue = String(password || "");
+      const isValid =
+        passwordValue.length >= 8 &&
+        /[a-z]/.test(passwordValue) &&
+        /[A-Z]/.test(passwordValue) &&
+        /\d/.test(passwordValue) &&
+        /[^A-Za-z0-9]/.test(passwordValue);
+
+      if (!isValid) {
+        Swal.fire({
+          title: "Invalid password",
+          text: "Provide a password with at least 8 characters, including uppercase, lowercase, number, and special character.",
+          icon: "error",
+        });
+        return false;
+      }
+
+      return true;
+    },
+    validateAdminAccess(account) {
+      const isAdmin =
+        account &&
+        String(account.username || "").trim().toLowerCase() === "admin";
+
+      if (!isAdmin) {
+        return true;
+      }
+
+      const hasFullAccess = this.tableData.every((module) =>
+        ["add", "read", "edit", "delete"].every(
+          (permission) => module.accessRights[permission] === true
+        )
+      );
+
+      if (!hasFullAccess) {
+        Swal.fire({
+          title: "Administrator permissions required",
+          text: "The admin must have absolute control of everything. All module permissions must be enabled.",
+          icon: "error",
+        });
+        return false;
+      }
+
+      return true;
+    },
     viewAccessDialog(access) {
       this.openAccess = true;
       // console.log( access)
@@ -497,14 +573,26 @@ export default {
       this.autoGeneratePassword();
     },
     autoGeneratePassword() {
-      let length = 8;
-      const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-      let password = "";
-      for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        password += characters.charAt(randomIndex);
+      const requiredCharacters = [
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "abcdefghijklmnopqrstuvwxyz",
+        "0123456789",
+        "!@#$%^&*",
+      ];
+      const allCharacters = requiredCharacters.join("");
+      const passwordCharacters = requiredCharacters.map(
+        (characters) => characters[Math.floor(Math.random() * characters.length)]
+      );
+
+      while (passwordCharacters.length < 8) {
+        passwordCharacters.push(
+          allCharacters[Math.floor(Math.random() * allCharacters.length)]
+        );
       }
-      this.insertItem.password = password;
+
+      this.insertItem.password = passwordCharacters
+        .sort(() => Math.random() - 0.5)
+        .join("");
       // console.log(this.insertItem.password);
     },
     getAllProducts() {
@@ -524,6 +612,14 @@ export default {
         });
     },
     updateInventory(val) {
+      if (!this.validatePassword(val.password)) {
+        return false;
+      }
+
+      if (!this.validateAdminAccess(val)) {
+        return false;
+      }
+
       // console.log(val);
       val.access = this.tableData;
       axios
@@ -558,9 +654,19 @@ export default {
         });
     },
     insertInventory() {
-      if(!this.insertItem.fullname || !this.insertItem.username || !this.insertItem.password){
+      if(
+        !String(this.insertItem.fullname || "").trim() ||
+        this.usernameIsBlank ||
+        !String(this.insertItem.password || "").trim()
+      ){
         Swal.fire("Please complete the details", "", "error");
         return false
+      }
+      if (!this.validatePassword(this.insertItem.password)) {
+        return false;
+      }
+      if (!this.validateAdminAccess(this.insertItem)) {
+        return false;
       }
       console.log(this.tableData);
       this.insertItem.access = this.tableData;

@@ -58,9 +58,13 @@
             > -->
             <v-text-field
               v-model="insertItem.categoryID"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
               label="Category Number"
               outlined
               dense
+              @input="sanitizeCategoryNumber"
             ></v-text-field>
             <v-text-field
               v-model="insertItem.categoryName"
@@ -76,6 +80,7 @@
             ></v-text-field>
 
             <v-btn
+              :disabled="categoryNumberIsInvalid"
               class="mt-1"
               :style="!addButton ? 'display:none;' : ''"
               @click="insertCategory(insertItem)"
@@ -145,6 +150,17 @@ export default {
     };
   },
   computed: {
+    categoryNumberIsInvalid() {
+      const categoryNumber = Number(this.insertItem.categoryID);
+
+      return (
+        this.insertItem.categoryID === "" ||
+        this.insertItem.categoryID === null ||
+        this.insertItem.categoryID === undefined ||
+        !Number.isInteger(categoryNumber) ||
+        categoryNumber <= 0
+      );
+    },
     paginatedItems() {
       const startIndex = (this.currentPage - 1) * this.itemsPerPage;
       const endIndex = startIndex + this.itemsPerPage;
@@ -165,6 +181,12 @@ export default {
     },
   },
   methods: {
+    sanitizeCategoryNumber(value) {
+      const categoryNumber = String(value || "");
+      this.insertItem.categoryID = /^\d*$/.test(categoryNumber)
+        ? categoryNumber
+        : "";
+    },
     formatdate(val) {
       return moment(val).format("YYYY-MM-DD hh:mm:ss");
     },
@@ -321,6 +343,15 @@ export default {
       this.$forceUpdate(); // Force Vue to update the view
     },
     insertCategory() {
+      if(this.categoryNumberIsInvalid){
+        Swal.fire(
+          "Invalid category number",
+          "Category number must be a positive whole number.",
+          "error"
+        );
+        return false
+      }
+
       if(!this.insertItem.categoryID || !this.insertItem.categoryName || !this.insertItem.description){
         Swal.fire("Please complete the details", "", "error");
         return false

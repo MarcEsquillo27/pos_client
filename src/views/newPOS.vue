@@ -520,7 +520,14 @@
             format="ampm"
             v-if="showTimePicker"
           ></v-time-picker>
-          <v-btn dense rounded block color="success" @click="saveDelivery()">Save</v-btn>
+          <v-btn
+            :disabled="!isDeliveryFormValid"
+            dense
+            rounded
+            block
+            color="success"
+            @click="saveDelivery()"
+          >Save</v-btn>
           <v-btn
             class="mt-2"
             dense
@@ -773,6 +780,20 @@ export default {
     },
   },
   computed: {
+    isDeliveryFormValid() {
+      const name = String(this.contact_name || "").trim();
+      const address = String(this.contact_address || "").trim();
+      const contact = String(this.contact_details || "").trim();
+
+      return (
+        name.length > 0 &&
+        address.length > 0 &&
+        contact.length > 0 &&
+        /^[0-9+\-\s()]+$/.test(contact) &&
+        moment(this.selectedDate, "YYYY-MM-DD", true).isValid() &&
+        moment(this.selectedTime, "HH:mm", true).isValid()
+      );
+    },
     filteredPendingTransactions() {
       if (!this.search) return this.togle_pending;
       const searchTerm = this.search.toLowerCase();
@@ -1029,6 +1050,22 @@ export default {
         title: "Are you sure you want to pending the transaction?",
         text: "please Enter Pending Name",
         input: "text",
+        inputValidator: (value) => {
+          if (!value || !value.trim()) {
+            return "Pending Name is required.";
+          }
+          return undefined;
+        },
+        didOpen: () => {
+          const input = Swal.getInput();
+          const confirmButton = Swal.getConfirmButton();
+          const updateConfirmState = () => {
+            confirmButton.disabled = !input.value.trim();
+          };
+
+          updateConfirmState();
+          input.addEventListener("input", updateConfirmState);
+        },
         showDenyButton: true,
         // showCancelButton: true,
         confirmButtonText: "Add Pending",
@@ -1036,13 +1073,20 @@ export default {
       }).then((result) => {
         /* Read more about isConfirmed, isDenied below */
         if (result.isConfirmed) {
+          const pendingName = String(result.value || "").trim();
+
+          if (!pendingName) {
+            Swal.fire("Please fill in the required Pending Name.", "", "error");
+            return;
+          }
+
           let a = 1;
 
           a++;
 
           let item = {
             id: a,
-            name: result.value,
+            name: pendingName,
             children: this.products.map((product) => ({
               id: product.id,
               product_name: product.productNumber,

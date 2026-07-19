@@ -153,6 +153,7 @@
               label="Product Number"
               outlined
               dense
+              maxlength="12"
               @change="checkSameBarcode(insertItem.productNumber)"
             ></v-text-field>
             <v-text-field
@@ -202,6 +203,7 @@
              @change = "NotAllowedLessStock(insertItem.stock)"
               v-model="currentStock"
               type="number"
+              min="0"
               label="Stock"
               outlined
               dense
@@ -237,6 +239,7 @@
               >
             </v-row>
             <v-btn
+              :disabled="stockIsInvalid || productNumberIsInvalid"
               class="mt-1"
               :style="!addButton ? 'display:none;' : ''"
               @click="insertInventory(insertItem)"
@@ -246,6 +249,7 @@
               SAVE
             </v-btn>
             <v-btn
+              :disabled="stockIsInvalid"
               class="mt-1"
               :style="!editButton ? 'display:none;' : ''"
               @click="updateInventory(insertItem)"
@@ -327,6 +331,19 @@ export default {
   },
 
   computed: {
+    productNumberIsInvalid() {
+      return !/^\d{12}$/.test(String(this.insertItem.productNumber || ""));
+    },
+    stockIsInvalid() {
+      const stock = Number(this.currentStock);
+
+      return (
+        this.currentStock === "" ||
+        this.currentStock === null ||
+        !Number.isFinite(stock) ||
+        stock < 0
+      );
+    },
     numPages() {
       return Math.ceil(this.InventoriesProduct.length / this.itemsPerPage);
     },
@@ -568,6 +585,11 @@ export default {
     },
     
     updateInventory(val) {
+      if (this.stockIsInvalid) {
+        Swal.fire("Stock cannot be a negative number", "", "error");
+        return false;
+      }
+
        if(val.salesPrice < val.originalPrice){
         Swal.fire("Sale price is higher than orignal price", "", "error");
         return false
@@ -701,6 +723,20 @@ export default {
 }
 ,
     insertInventory() {
+       if(this.productNumberIsInvalid){
+        Swal.fire(
+          "Invalid product number",
+          "Product number must contain exactly 12 numeric digits without spaces.",
+          "error"
+        );
+        return false
+      }
+
+       if(this.stockIsInvalid){
+        Swal.fire("Stock cannot be a negative number", "", "error");
+        return false
+      }
+
        if(this.insertItem.salesPrice < this.insertItem.originalPrice){
         Swal.fire("Sale price is lower than orignal price", "", "error");
       }
@@ -734,7 +770,7 @@ export default {
         
         return false
       }
-      if(this.insertItem.stock  < 5){
+      if(Number(this.currentStock) < 5){
         Swal.fire("It should be 5 or more stocks", "", "error");
         return false
 

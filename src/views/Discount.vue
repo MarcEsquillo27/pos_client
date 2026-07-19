@@ -216,6 +216,15 @@ export default {
       })
     },
     DeleteDiscount(val){
+      if (Number(val.status) === 0) {
+        Swal.fire({
+          title: "Active Discount",
+          text: "Deactivate the discount category before deleting it.",
+          icon: "error",
+        });
+        return;
+      }
+
        Swal.fire({
         title: "Are you sure?",
         text: "You won't be able to revert this!",
@@ -226,13 +235,21 @@ export default {
         confirmButtonText: "Yes, delete it!",
       }).then((result) => {
          if (result.isConfirmed) {
+        Discount.deleteDiscount(this.$store.state.storedEmp.token,val).then(()=>{
           Swal.fire({
             title: "Deleted!",
             text: "The Discount has been deleted.",
             icon: "success",
           });
-        Discount.deleteDiscount(this.$store.state.storedEmp.token,val).then(()=>{
             location.reload()
+        }).catch((err) => {
+          Swal.fire({
+            title: "Unable to delete discount",
+            text: err.response && err.response.data && err.response.data.message
+              ? err.response.data.message
+              : "Deactivate the discount category before deleting it.",
+            icon: "error",
+          });
         })
 
          }
@@ -344,7 +361,7 @@ export default {
         Swal.fire("Please complete the details", "", "error");
         return false
       }
-      let add_data = this.insertItem;
+      let add_data = { ...this.insertItem, status: 0 };
       axios
         .post(`${this.apiUrl}/discount/api/addDiscount`, add_data,{
         headers: {
@@ -352,6 +369,7 @@ export default {
           },
       })
         .then(() => {
+          this.insertItem.status = 0;
           this.all_products.push(this.insertItem);
           Swal.fire({
             title: "New Discount Added",
