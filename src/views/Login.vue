@@ -62,7 +62,10 @@ export default {
   methods: {
     login() {
       axios
-        .get(`${this.apiUrl}/login/api/getPerAccount/${this.username}/${this.password}`)
+        .post(`${this.apiUrl}/login/api/getPerAccount`, {
+          username: this.username,
+          password: this.password,
+        })
         .then((res) => {
           if (res.data.userdetails.length) {
             res.data.token = cryptoJS.AES.encrypt(
@@ -82,6 +85,13 @@ export default {
           } else {
             alert("Something went wrong, please try again");
           }
+        })
+        .catch((err) => {
+          const message =
+            err.response && err.response.data && err.response.data.message
+              ? err.response.data.message
+              : "Unable to connect to the login service. Please try again.";
+          alert(message);
         });
     },
   },
