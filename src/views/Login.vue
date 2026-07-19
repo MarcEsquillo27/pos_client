@@ -35,6 +35,7 @@
                   </v-col>
                 </v-row>
               </v-card-text>
+              <div class="app-version">v1.0.0+1</div>
             </v-card>
           </v-col>
         </v-row>
@@ -95,5 +96,11 @@ export default {
   background-image: url("../../public/img/formBG.png");
   background-size: cover;
   /* padding: 15px; */
+}
+.app-version {
+  padding: 0 16px 12px;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+  text-align: right;
 }
 </style>
