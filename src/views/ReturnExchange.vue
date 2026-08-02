@@ -119,7 +119,8 @@
             "
             item-value="productNumber"
             v-model="toUpdate.productNumber"
-            @change="getItemDetails(toUpdate.productNumber)"
+            @change="getItemDetails"
+            @click:clear="clearExchangeProduct(true)"
           />
           Remaining Stock {{ toUpdate.stock }}
           <v-text-field
@@ -208,6 +209,15 @@ export default {
     };
   },
   computed: {
+    exchangeProductIsValid() {
+      return (
+        this.toUpdate.productNumber !== null &&
+        this.toUpdate.productNumber !== "" &&
+        this.list_of_products.some(
+          (product) => product.productNumber === this.toUpdate.productNumber
+        )
+      );
+    },
     exchangeQuantityIsValid() {
       const originalItem = this.toOldItem[0];
       const quantity = Number(this.quantity);
@@ -217,6 +227,19 @@ export default {
         Number.isFinite(quantity) &&
         Number.isFinite(originalQuantity) &&
         quantity >= originalQuantity
+      );
+    },
+    exchangeIsUnchanged() {
+      const originalItem = this.toOldItem[0];
+
+      if (!originalItem) {
+        return false;
+      }
+
+      return (
+        String(this.toUpdate.productNumber) ===
+          String(originalItem.productNumber) &&
+        Number(this.quantity) === Number(originalItem.quantity)
       );
     },
     exchangeValueExceedsOriginal() {
@@ -250,6 +273,8 @@ export default {
 
       return (
         !this.toExchange &&
+        this.exchangeProductIsValid &&
+        !this.exchangeIsUnchanged &&
         this.exchangeQuantityIsValid &&
         !this.exchangeValueExceedsOriginal &&
         Number.isFinite(quantity) &&
@@ -295,15 +320,25 @@ export default {
     },
     async updateSales() {
       if (!this.canExchange) {
+        const productIsMissing = !this.exchangeProductIsValid;
+        const exchangeIsUnchanged = this.exchangeIsUnchanged;
         const valueIsTooHigh = this.exchangeValueExceedsOriginal;
         const quantityIsTooLow = !this.exchangeQuantityIsValid;
         Swal.fire({
-          title: quantityIsTooLow
+          title: productIsMissing
+            ? "Select an exchange product"
+            : exchangeIsUnchanged
+            ? "No changes to exchange"
+            : quantityIsTooLow
             ? "Invalid exchange quantity"
             : valueIsTooHigh
             ? "Invalid exchange value"
             : "Invalid quantity",
-          text: quantityIsTooLow
+          text: productIsMissing
+            ? "A product must be selected before the exchange can continue."
+            : exchangeIsUnchanged
+            ? "Select a different product or change the quantity before continuing."
+            : quantityIsTooLow
             ? "The exchange quantity cannot be lower than the original quantity."
             : valueIsTooHigh
             ? "The exchange total cannot be higher than the original item total."
@@ -358,7 +393,27 @@ export default {
     computeTotal() {
       this.total = this.toUpdate.salesPrice * this.quantity;
     },
+    clearExchangeProduct(showWarning = false) {
+      this.toUpdate.productNumber = null;
+      this.toExchange = true;
+      this.toUpdate.stock = null;
+      this.toUpdate.salesPrice = null;
+      this.total = null;
+
+      if (showWarning) {
+        Swal.fire({
+          title: "No item selected",
+          text: "Select a product before continuing with the exchange.",
+          icon: "warning",
+        });
+      }
+    },
     getItemDetails(val) {
+      if (!val) {
+        this.clearExchangeProduct();
+        return;
+      }
+
       this.toExchange = false;
       axios
         .get(`${this.apiUrl}/inventory/api/getPerItem/${val}`, {
@@ -367,6 +422,12 @@ export default {
           },
         })
         .then((res) => {
+          // Ignore a response if the product was cleared or changed while the
+          // request was still in progress.
+          if (this.toUpdate.productNumber !== val) {
+            return;
+          }
+
           for (let i = 0; i < res.data.length; i++) {
             const element = res.data[i];
             this.toUpdate.stock = element.stock;

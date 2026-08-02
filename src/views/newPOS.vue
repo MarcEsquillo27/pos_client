@@ -69,10 +69,17 @@
                     v-model="discounted"
                     @click="discounted?openPwdDialog():pwd_dialog = false"
                     hide-details
-                /></v-col>
+                />
+                    <v-chip
+                      v-if="discounted && discount_type"
+                      small
+                      color="primary"
+                      text-color="white"
+                    >{{ discount_type }}</v-chip>
+                  </v-col>
                 <v-col>
                   <v-btn
-                    :disabled="total > 0 ? false : true"
+                    :disabled="!hasSelectedItems"
                     @click="pendingItem()"
                     dense
                     small
@@ -107,10 +114,10 @@
                     >Pending Transaction({{ list_of_pending.length }})</v-btn
                   >
                   <v-btn
-                 :disabled="cashpayment || epayment ? false : true"
+                 :disabled="!(cashpayment || epayment) || !hasSelectedItems"
                   class="mt-2" small
                   color="primary"
-                  @click="delivery_dialog = true"
+                  @click="openDeliveryDialog()"
                   >For Delivery</v-btn
                 >
                  
@@ -121,7 +128,7 @@
               <v-row>
                 <v-col>
                   <v-btn
-                    :disabled="cashpayment || epayment ? false : true"
+                    :disabled="!(cashpayment || epayment) || !hasSelectedItems"
                     large
                     class="d-flex flex-column align-center mt-2"
                     color="success"
@@ -269,6 +276,8 @@
           <v-btn
             @click="purchase()"
             v-if="qr_image == 'gcash' || qr_image == 'paymaya' && cash == totalDiscounted()"
+            :loading="isPurchasing"
+            :disabled="isPurchasing"
             dense
             block
             rounded
@@ -327,6 +336,8 @@
           <v-btn
             @click="purchase()"
             v-if="change >= 0"
+            :loading="isPurchasing"
+            :disabled="isPurchasing"
             dense
             
             rounded
@@ -409,7 +420,11 @@
                     padding: 0 0 5px 0;
                   "
                 >
-                  <div>20% Discount:</div>
+                  <div>
+                    20% Discount<span v-if="discounted && discount_type">
+                      ({{ discount_type }})</span
+                    >:
+                  </div>
                   <div>{{ discounted? this.applied_discount: '0' }}</div>
                 </li>
                 <li
@@ -601,16 +616,26 @@
     <!-- DIALOG FOR PWD -->
     <v-dialog v-model="pwd_dialog" width="500" persistent>
       <v-card id="my-card">
-        <v-card-title>PWD Details</v-card-title>
+        <v-card-title>20% Discount Details</v-card-title>
         <v-card-text>
+          <v-select
+            v-model="discount_type"
+            :items="['PWD', 'Senior Citizen']"
+            label="Discount Type"
+            outlined
+            rounded
+            dense
+            required
+          ></v-select>
           <v-text-field
             v-model="pwd_details.pwd_id"
             outlined
             rounded
             dense
             block
-            label="ID Number"
+            :label="discount_type ? `${discount_type} ID Number` : 'ID Number'"
             required
+            :rules="[(value) => !!String(value || '').trim() || 'ID Number is required']"
           ></v-text-field>
           <v-text-field
             v-model="pwd_details.last_name"
@@ -672,7 +697,14 @@
           :items="['Male','Female']"
           />
         
-          <v-btn dense rounded block color="success" @click="savePwdDetails(pwd_details)">Save</v-btn>
+          <v-btn
+            dense
+            rounded
+            block
+            color="success"
+            :disabled="!hasDiscountId"
+            @click="savePwdDetails(pwd_details)"
+          >Save</v-btn>
           <v-btn
             class="mt-2"
             dense
@@ -719,6 +751,7 @@ export default {
       pwd_details:{},
       pwd_dialog:false,
       applied_discount:0,
+      discount_type:null,
       orginal_price:0,
       store_name:"",
       nexSalesID:"",
@@ -760,6 +793,7 @@ export default {
       cash: 0,
       total: 0,
       change: 0,
+      isPurchasing: false,
       authorization: "",
       headers: [
         { text: "Item", value: "item" },
@@ -780,12 +814,19 @@ export default {
     },
   },
   computed: {
+    hasSelectedItems() {
+      return (
+        Array.isArray(this.products) &&
+        this.products.some((product) => product !== null && product !== undefined)
+      );
+    },
     isDeliveryFormValid() {
       const name = String(this.contact_name || "").trim();
       const address = String(this.contact_address || "").trim();
       const contact = String(this.contact_details || "").trim();
 
       return (
+        this.hasSelectedItems &&
         name.length > 0 &&
         address.length > 0 &&
         contact.length > 0 &&
@@ -812,12 +853,16 @@ export default {
       }
       return filteredProducts;
     },
+    hasDiscountId() {
+      return !!String(this.pwd_details.pwd_id || "").trim();
+    },
 
   },
   methods: {
     closePWDDialog(){
       this.pwd_dialog = false
       this.discounted = false
+      this.discount_type = null
     },
     blockInvalidCharacters(event) {
       // Allow only numbers (0-9) and a single dot (.)
@@ -880,6 +925,14 @@ export default {
   // --- Validation rules ---
   const errors = [];
 
+  if (!this.discount_type) {
+    errors.push("Discount type is required.");
+  }
+
+  if (!val.pwd_id || String(val.pwd_id).trim() === "") {
+    errors.push("ID number is required.");
+  }
+
   if (!val.first_name || val.first_name.trim() === "") {
     errors.push("First name is required.");
   }
@@ -900,6 +953,14 @@ export default {
     errors.push("Age must be greater than 0.");
   }
 
+  if (this.discount_type === "PWD" && val.age < 18) {
+    errors.push("PWD discount is only available to customers age 18 or older.");
+  }
+
+  if (this.discount_type === "Senior Citizen" && val.age < 65) {
+    errors.push("Senior Citizen discount is only available to customers age 65 or older.");
+  }
+
   if (!val.sex || !["Male", "Female"].includes(val.sex)) {
     errors.push("Sex must be 'Male' or 'Female'.");
   }
@@ -917,6 +978,7 @@ export default {
   // --- If validation passes, continue ---
   val.sales_id = this.nexSalesID;
   val.date = moment().format("YYYY-MM-DD HH:mm:ss");
+  val.discount_type = this.discount_type;
 
   PWD.addPwd(this.$store.state.storedEmp.token, val).then(() => {
     Swal.fire({
@@ -940,6 +1002,7 @@ export default {
   openPwdDialog(){
     this.pwd_dialog = true
     this.pwd_details = {}
+    this.discount_type = null
     this.birth_date = (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().substr(0, 10)
   },
   searchItems(){
@@ -1046,6 +1109,15 @@ export default {
       return moment(val).format("YYYYMMDDhhmmss");
     },
     pendingItem() {
+      if (!this.hasSelectedItems) {
+        Swal.fire({
+          title: "No items selected",
+          text: "Add at least one item before adding a pending transaction.",
+          icon: "warning",
+        });
+        return false;
+      }
+
       Swal.fire({
         title: "Are you sure you want to pending the transaction?",
         text: "please Enter Pending Name",
@@ -1123,7 +1195,28 @@ export default {
 
       // }
     },
+    openDeliveryDialog() {
+      if (!this.hasSelectedItems) {
+        Swal.fire({
+          title: "No items selected",
+          text: "Add at least one item before creating a delivery.",
+          icon: "warning",
+        });
+        return false;
+      }
+
+      this.delivery_dialog = true;
+    },
     saveDelivery() {
+  if (!this.hasSelectedItems) {
+    Swal.fire({
+      title: "No items selected",
+      text: "Add at least one item before creating a delivery.",
+      icon: "warning",
+    });
+    return false;
+  }
+
   let get_details = {
     salesID: this.nexSalesID,
     name: this.contact_name,
@@ -1390,11 +1483,29 @@ return this.applied_discount.toFixed(2)
 },
     // ALL @CLICK FUNCTION
     electronicPayment() {
+      if (!this.hasSelectedItems) {
+        Swal.fire({
+          title: "No items selected",
+          text: "Add at least one item before proceeding to payment.",
+          icon: "warning",
+        });
+        return false;
+      }
+
       this.mode_of_payment = null
       this.epayment_dialog = true;
 
     },
     cashPayment() {
+      if (!this.hasSelectedItems) {
+        Swal.fire({
+          title: "No items selected",
+          text: "Add at least one item before proceeding to payment.",
+          icon: "warning",
+        });
+        return false;
+      }
+
       this.cash_dialog = true;
     },
     voidTransaction(){
@@ -1424,13 +1535,22 @@ return this.applied_discount.toFixed(2)
       // Void.addVoid(this.$store.state.storedEmp.token,void_items)
     },
     purchase() {
-      const exactAmmountValidation = this.exactAmountOnly()
-      if(exactAmmountValidation == true){
+      if(this.isPurchasing){
+        return false
+      }
+
+      if (!this.hasSelectedItems) {
         Swal.fire({
-                title: "Please enter exact amount",
-                text: `it should be equal to ${this.totalDiscounted()}`,
-                icon: "warning"
-                });
+          title: "No items selected",
+          text: "Add at least one item before proceeding to payment.",
+          icon: "warning",
+        });
+        return false;
+      }
+
+      // Cash payments may exceed the total because the difference is returned
+      // as change. Only electronic payments require the exact amount.
+      if(this.epayment && this.exactAmountOnly() === true){
         return false
       }
       
@@ -1447,20 +1567,20 @@ return this.applied_discount.toFixed(2)
       let finalDataItem = this.products.filter((product)=>{
         return product
       })
+      this.isPurchasing = true
       Inventory.updateProduct(this.$store.state.storedEmp.token,finalDataItem)
         .then(() => {
-          Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,
+          return Sales.AddSales(this.$store.state.storedEmp.token,this.$store.state.storedEmp.userdetails[0].fullname,
           this.epayment,
           this.cashpayment,
           finalDataItem,
           this.reference_number,
           this.cash,
           this.nexSalesID
-        )
-            .then((res) => {
-              this.salesInvoice = res.data[0];
-            })
-            .then(() => {
+          )
+        })
+        .then((res) => {
+          this.salesInvoice = res.data[0];
               for (let i = 0; i < finalDataItem.length; i++) {
                 const element = finalDataItem[i];
                 let audit_logs = {
@@ -1473,9 +1593,8 @@ return this.applied_discount.toFixed(2)
                   transaction_by:this.$store.state.storedEmp.userdetails[0].fullname
                 };
                 Audits.AddLogs(this.$store.state.storedEmp.token,audit_logs)
-                
+                 
               }
-            });
           this.receipt_dialog = true;
           getStore.getStoreData(this.$store.state.storedEmp.token).then((res)=>{
       this.store_name = res.data[0].store_name
@@ -1488,6 +1607,9 @@ return this.applied_discount.toFixed(2)
         })
         .catch((err) => {
           alert(err);
+        })
+        .finally(() => {
+          this.isPurchasing = false;
         });
     },
 

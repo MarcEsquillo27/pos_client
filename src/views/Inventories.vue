@@ -151,6 +151,8 @@
             <v-text-field
               v-model="insertItem.productNumber"
               label="Product Number"
+              required
+              :rules="productNumberRules"
               outlined
               dense
               maxlength="12"
@@ -239,7 +241,7 @@
               >
             </v-row>
             <v-btn
-              :disabled="stockIsInvalid || productNumberIsInvalid"
+              :disabled="stockIsInvalid || productNumberIsInvalid || salesPriceIsInvalid"
               class="mt-1"
               :style="!addButton ? 'display:none;' : ''"
               @click="insertInventory(insertItem)"
@@ -249,7 +251,7 @@
               SAVE
             </v-btn>
             <v-btn
-              :disabled="stockIsInvalid"
+              :disabled="stockIsInvalid || productNumberIsInvalid || salesPriceIsInvalid"
               class="mt-1"
               :style="!editButton ? 'display:none;' : ''"
               @click="updateInventory(insertItem)"
@@ -331,6 +333,14 @@ export default {
   },
 
   computed: {
+    productNumberRules() {
+      return [
+        (value) => !!String(value || "").trim() || "Product Number is required",
+        (value) =>
+          /^\d{12}$/.test(String(value || "")) ||
+          "Product Number must contain exactly 12 numeric digits",
+      ];
+    },
     productNumberIsInvalid() {
       return !/^\d{12}$/.test(String(this.insertItem.productNumber || ""));
     },
@@ -342,6 +352,20 @@ export default {
         this.currentStock === null ||
         !Number.isFinite(stock) ||
         stock < 0
+      );
+    },
+    salesPriceIsInvalid() {
+      const originalPrice = Number(this.insertItem.originalPrice);
+      const salesPrice = Number(this.insertItem.salesPrice);
+
+      return (
+        this.insertItem.originalPrice === "" ||
+        this.insertItem.originalPrice === null ||
+        this.insertItem.salesPrice === "" ||
+        this.insertItem.salesPrice === null ||
+        !Number.isFinite(originalPrice) ||
+        !Number.isFinite(salesPrice) ||
+        salesPrice < originalPrice
       );
     },
     numPages() {
@@ -585,6 +609,15 @@ export default {
     },
     
     updateInventory(val) {
+      if (this.productNumberIsInvalid) {
+        Swal.fire(
+          "Invalid product number",
+          "Product Number is required and must contain exactly 12 numeric digits without spaces.",
+          "error"
+        );
+        return false;
+      }
+
       if (this.stockIsInvalid) {
         Swal.fire("Stock cannot be a negative number", "", "error");
         return false;
@@ -724,9 +757,9 @@ export default {
 ,
     insertInventory() {
        if(this.productNumberIsInvalid){
-        Swal.fire(
+         Swal.fire(
           "Invalid product number",
-          "Product number must contain exactly 12 numeric digits without spaces.",
+          "Product Number is required and must contain exactly 12 numeric digits without spaces.",
           "error"
         );
         return false
@@ -738,7 +771,8 @@ export default {
       }
 
        if(this.insertItem.salesPrice < this.insertItem.originalPrice){
-        Swal.fire("Sale price is lower than orignal price", "", "error");
+        Swal.fire("Sale price must be higher than or equal to original price", "", "error");
+        return false
       }
        const numberValidation = this.validateNumberValue()
 
