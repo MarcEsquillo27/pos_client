@@ -206,9 +206,11 @@
               v-model="currentStock"
               type="number"
               min="0"
+              step="1"
               label="Stock"
               outlined
               dense
+              :error-messages="stockValidationMessage"
             ></v-text-field>
             <v-text-field
               v-model="insertItem.originalPrice"
@@ -351,8 +353,24 @@ export default {
         this.currentStock === "" ||
         this.currentStock === null ||
         !Number.isFinite(stock) ||
+        !Number.isInteger(stock) ||
         stock < 0
       );
+    },
+    stockValidationMessage() {
+      if (this.currentStock === "" || this.currentStock === null) {
+        return "Stock is required.";
+      }
+
+      const stock = Number(this.currentStock);
+      if (!Number.isFinite(stock) || stock < 0) {
+        return "Stock must be a non-negative number.";
+      }
+      if (!Number.isInteger(stock)) {
+        return "Stock must be a whole number.";
+      }
+
+      return "";
     },
     salesPriceIsInvalid() {
       const originalPrice = Number(this.insertItem.originalPrice);
@@ -391,6 +409,10 @@ export default {
 
 },
     NotAllowedLessStock(){
+      if (!Number.isInteger(Number(this.currentStock))) {
+        Swal.fire("Stock must be a whole number", "Decimal quantities are not allowed.", "error");
+        return;
+      }
       
       if(this.currentStock < this.insertItem.stock){
         Swal.fire(`It should be more than current stock (${this.insertItem.stock})`, "", "error");
@@ -574,7 +596,7 @@ export default {
     },
     overallCapital(val) {
       var totalallCapital = null;
-      totalallCapital = val.stock * val.salesPrice;
+      totalallCapital = Number(this.currentStock) * Number(val.salesPrice);
       //  totalCapital = val.salesPrice - val.originalPrice
       return !totalallCapital ? 0 : totalallCapital;
     },
@@ -619,7 +641,7 @@ export default {
       }
 
       if (this.stockIsInvalid) {
-        Swal.fire("Stock cannot be a negative number", "", "error");
+        Swal.fire("Invalid stock", this.stockValidationMessage, "error");
         return false;
       }
 
@@ -766,7 +788,7 @@ export default {
       }
 
        if(this.stockIsInvalid){
-        Swal.fire("Stock cannot be a negative number", "", "error");
+        Swal.fire("Invalid stock", this.stockValidationMessage, "error");
         return false
       }
 

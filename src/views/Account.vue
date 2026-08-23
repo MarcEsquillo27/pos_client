@@ -99,6 +99,7 @@
               dense
             ></v-text-field>
             <v-text-field
+              v-if="!editButton"
               v-model="insertItem.password"
               label="Password"
               outlined
@@ -107,7 +108,10 @@
               append-outer-icon="mdi-clipboard-outline"
               @click:append-outer="copyText"
             ></v-text-field>
-            <v-btn :disabled="editButton?false:true" small color="primary" @click="autoGeneratePassword()">Generate Password</v-btn>
+            <v-btn v-if="!editButton" small color="primary" @click="autoGeneratePassword()">Generate Password</v-btn>
+            <v-btn v-else small color="primary" @click="openChangePasswordDialog">
+              Change Password
+            </v-btn>
             <v-simple-table>
               <thead>
                 <tr>
@@ -186,6 +190,40 @@
               UPDATE
             </v-btn>
           </v-card-text>
+        </v-card>
+      </v-dialog>
+      <v-dialog v-model="changePasswordDialog" max-width="500px">
+        <v-card>
+          <v-card-title>Change Password</v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model="passwordForm.newPassword"
+              label="New Password"
+              type="password"
+              outlined
+              dense
+              :error-messages="newPasswordValidationMessage"
+            ></v-text-field>
+            <v-text-field
+              v-model="passwordForm.confirmPassword"
+              label="Confirm Password"
+              type="password"
+              outlined
+              dense
+              :error-messages="confirmPasswordValidationMessage"
+            ></v-text-field>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn text @click="closeChangePasswordDialog">Cancel</v-btn>
+            <v-btn
+              color="success"
+              :disabled="!changePasswordFormIsValid"
+              @click="changePassword"
+            >
+              Update Password
+            </v-btn>
+          </v-card-actions>
         </v-card>
       </v-dialog>
       <!-- ACCESS TABLE -->
@@ -302,6 +340,11 @@ export default {
       addButton: false,
       editButton: false,
       add_dialog: false,
+      changePasswordDialog: false,
+      passwordForm: {
+        newPassword: "",
+        confirmPassword: "",
+      },
       showDatePicker: false,
       from_date: null,
       all_products: [],
@@ -331,6 +374,29 @@ export default {
       }
 
       return "Use at least 8 characters with uppercase, lowercase, number, and special character.";
+    },
+    newPasswordValidationMessage() {
+      if (!this.passwordForm.newPassword || this.validatePasswordValue(this.passwordForm.newPassword)) {
+        return "";
+      }
+
+      return "Use at least 8 characters with uppercase, lowercase, number, and special character.";
+    },
+    confirmPasswordValidationMessage() {
+      if (
+        !this.passwordForm.confirmPassword ||
+        this.passwordForm.confirmPassword === this.passwordForm.newPassword
+      ) {
+        return "";
+      }
+
+      return "Passwords do not match.";
+    },
+    changePasswordFormIsValid() {
+      return (
+        this.validatePasswordValue(this.passwordForm.newPassword) &&
+        this.passwordForm.confirmPassword === this.passwordForm.newPassword
+      );
     },
     usernameIsBlank() {
       return !String(this.insertItem.username || "").trim();
@@ -362,14 +428,18 @@ export default {
     },
   },
   methods: {
-    validatePassword(password) {
+    validatePasswordValue(password) {
       const passwordValue = String(password || "");
-      const isValid =
+      return (
         passwordValue.length >= 8 &&
         /[a-z]/.test(passwordValue) &&
         /[A-Z]/.test(passwordValue) &&
         /\d/.test(passwordValue) &&
-        /[^A-Za-z0-9]/.test(passwordValue);
+        /[^A-Za-z0-9]/.test(passwordValue)
+      );
+    },
+    validatePassword(password) {
+      const isValid = this.validatePasswordValue(password);
 
       if (!isValid) {
         Swal.fire({
@@ -504,12 +574,10 @@ export default {
       });
     },
     editInventory(val) {
-      val.password = ""
       this.tableData = JSON.parse(val.access);
       this.addButton = false;
-      this.insertItem = {};
       this.add_dialog = true;
-      this.insertItem = val;
+      this.insertItem = { ...val };
       this.editButton = true;
       // this.autoGeneratePassword();
     },
@@ -612,18 +680,14 @@ export default {
         });
     },
     updateInventory(val) {
-      if (!this.validatePassword(val.password)) {
-        return false;
-      }
-
       if (!this.validateAdminAccess(val)) {
         return false;
       }
 
-      // console.log(val);
-      val.access = this.tableData;
+      const accountData = { ...val, access: this.tableData };
+      delete accountData.password;
       axios
-        .post(`${this.apiUrl}/account/api/updateAccount`, val, {
+        .post(`${this.apiUrl}/account/api/updateAccount`, accountData, {
           headers: {
             authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`, // Assuming Bearer token
           },
@@ -651,6 +715,38 @@ export default {
         })
         .catch((err) => {
           alert(err);
+        });
+    },
+    openChangePasswordDialog() {
+      this.passwordForm = { newPassword: "", confirmPassword: "" };
+      this.changePasswordDialog = true;
+    },
+    closeChangePasswordDialog() {
+      this.changePasswordDialog = false;
+      this.passwordForm = { newPassword: "", confirmPassword: "" };
+    },
+    changePassword() {
+      if (!this.changePasswordFormIsValid) {
+        Swal.fire("Invalid password", "Check that the passwords meet the requirements and match.", "error");
+        return;
+      }
+
+      axios
+        .post(
+          `${this.apiUrl}/account/api/changePassword`,
+          { id: this.insertItem.id, password: this.passwordForm.newPassword },
+          {
+            headers: {
+              authorization: `Bearer ${secret_key(this.$store.state.storedEmp.token)}`,
+            },
+          }
+        )
+        .then(() => {
+          this.closeChangePasswordDialog();
+          Swal.fire("Password updated", "", "success");
+        })
+        .catch((err) => {
+          Swal.fire("Unable to update password", err.response?.data?.message || String(err), "error");
         });
     },
     insertInventory() {
