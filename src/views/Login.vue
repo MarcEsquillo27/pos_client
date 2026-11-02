@@ -35,7 +35,7 @@
                   </v-col>
                 </v-row>
               </v-card-text>
-              <div class="app-version">v1.0.0+3</div>
+              <div class="app-version">v1.0.0+4</div>
             </v-card>
           </v-col>
         </v-row>
