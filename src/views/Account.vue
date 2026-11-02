@@ -112,6 +112,15 @@
             <v-btn v-else small color="primary" @click="openChangePasswordDialog">
               Change Password
             </v-btn>
+            <v-select
+              v-model="accountType"
+              :items="accountTypes"
+              label="Account Type"
+              outlined
+              dense
+              class="mt-4"
+              @change="applyAccountType"
+            ></v-select>
             <v-simple-table>
               <thead>
                 <tr>
@@ -124,19 +133,19 @@
                   <td>{{ row.drawerLink }}</td>
                   <td>
                     <label>
-                      <input type="checkbox" v-model="row.accessRights.add" />
+                      <input type="checkbox" v-model="row.accessRights.add" :disabled="permissionIsDisabled(row)" />
                       Add
                     </label>
                     <label>
-                      <input type="checkbox" v-model="row.accessRights.read" />
+                      <input type="checkbox" v-model="row.accessRights.read" :disabled="permissionIsDisabled(row)" />
                       Read
                     </label>
                     <label>
-                      <input type="checkbox" v-model="row.accessRights.edit" />
+                      <input type="checkbox" v-model="row.accessRights.edit" :disabled="permissionIsDisabled(row)" />
                       Edit
                     </label>
                     <label>
-                      <input type="checkbox" v-model="row.accessRights.delete" />
+                      <input type="checkbox" v-model="row.accessRights.delete" :disabled="permissionIsDisabled(row)" />
                       Delete
                     </label>
                   </td>
@@ -271,6 +280,7 @@
 </template>
 
 <script>
+import { ACCOUNT_TYPES, defaultAccess, enforceAccess, inferAccountType, isAdminModule } from "../functions/accountAccess";
 import axios from "axios";
 import moment from "moment";
 import _ from "lodash";
@@ -283,56 +293,9 @@ export default {
     return {
       openAccess: false,
       viewAccessTable: [],
-      tableData: [
-        {
-          drawerLink: "POS",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "PWD",  
-          accessRights: { add: false, read: true, edit: false, delete: false }, 
-        },
-        {
-          drawerLink: "Delivery",  
-          accessRights: { add: false, read: true, edit: false, delete: false }, 
-        },
-        {
-          drawerLink: "Inventories",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Discount",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Return and Exchange",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Sale Report",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Category",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Transaction Logs",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Void Logs",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Account Registration",
-          accessRights: { add: false, read: false, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Settings",
-          accessRights: { add: false, read: false, edit: false, delete: false },
-        },
-      ],
+      accountType: "Cashier",
+      accountTypes: ACCOUNT_TYPES,
+      tableData: defaultAccess("Cashier"),
       apiUrl: process.env.VUE_APP_API_URL,
 
       currentPage: 1, // Current page number
@@ -452,31 +415,14 @@ export default {
 
       return true;
     },
-    validateAdminAccess(account) {
-      const isAdmin =
-        account &&
-        String(account.username || "").trim().toLowerCase() === "admin";
-
-      if (!isAdmin) {
-        return true;
-      }
-
-      const hasFullAccess = this.tableData.every((module) =>
-        ["add", "read", "edit", "delete"].every(
-          (permission) => module.accessRights[permission] === true
-        )
-      );
-
-      if (!hasFullAccess) {
-        Swal.fire({
-          title: "Administrator permissions required",
-          text: "The admin must have absolute control of everything. All module permissions must be enabled.",
-          icon: "error",
-        });
-        return false;
-      }
-
-      return true;
+    applyAccountType() {
+      this.tableData = defaultAccess(this.accountType);
+    },
+    permissionIsDisabled(row) {
+      return this.accountType === "Admin" || isAdminModule(row.drawerLink);
+    },
+    enforceAccountAccess() {
+      this.tableData = enforceAccess(this.accountType, this.tableData);
     },
     viewAccessDialog(access) {
       this.openAccess = true;
@@ -574,7 +520,9 @@ export default {
       });
     },
     editInventory(val) {
-      this.tableData = JSON.parse(val.access);
+      const access = typeof val.access === "string" ? JSON.parse(val.access) : val.access;
+      this.accountType = inferAccountType(access);
+      this.tableData = enforceAccess(this.accountType, access);
       this.addButton = false;
       this.add_dialog = true;
       this.insertItem = { ...val };
@@ -586,58 +534,8 @@ export default {
       this.addButton = true;
       this.editButton = false;
       this.insertItem = {};
-      // this.tableData =
-      this.tableData = [
-        {
-          drawerLink: "POS",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "PWD",  
-          accessRights: { add: false, read: true, edit: false, delete: false }, 
-        },
-        
-        {
-          drawerLink: "Delivery",  
-          accessRights: { add: false, read: true, edit: false, delete: false }, 
-        },
-        {
-          drawerLink: "Inventories",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Discount",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Return and Exchange",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Sale Report",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Category",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Transaction Logs",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Void Logs",
-          accessRights: { add: false, read: true, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Account Registration",
-          accessRights: { add: false, read: false, edit: false, delete: false },
-        },
-        {
-          drawerLink: "Settings",
-          accessRights: { add: false, read: false, edit: false, delete: false },
-        },
-      ]
+      this.accountType = "Cashier";
+      this.applyAccountType();
       this.autoGeneratePassword();
     },
     autoGeneratePassword() {
@@ -680,9 +578,7 @@ export default {
         });
     },
     updateInventory(val) {
-      if (!this.validateAdminAccess(val)) {
-        return false;
-      }
+      this.enforceAccountAccess();
 
       const accountData = { ...val, access: this.tableData };
       delete accountData.password;
@@ -761,9 +657,7 @@ export default {
       if (!this.validatePassword(this.insertItem.password)) {
         return false;
       }
-      if (!this.validateAdminAccess(this.insertItem)) {
-        return false;
-      }
+      this.enforceAccountAccess();
       console.log(this.tableData);
       this.insertItem.access = this.tableData;
       let add_data = this.insertItem;
